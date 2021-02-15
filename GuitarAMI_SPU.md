@@ -60,6 +60,8 @@ The fourth line indicates: **SC | PD | WiFi mode | Pedalboard**
 - The **WiFi mode** indicator show the WiFi operation mode: **STA** for station mode (SPU as client) and **AP** for access point (SPU as a hotspot)
 - The **PedalBoard** indicator shows which pedalboard is loaded on the plugin host. Check the [Accessing the plugin host](#accessing-the-plugin-host) session for more information
 
+It is also adviseable to have the GuitarAMI module batery level indicated on screen. This information, and any other visual feedback, needs to be manually added using SuperCollider or Pure Data. In this example, the module's batery level is indicated on the upper-left corner.
+
 ## Operation modes
 
 To change between the modes, press and hold the interface button (6) for 3 seconds. You will see a red light under the interface button. The WiFi mode will change between **AP** and **STA** in a couple of seconds.

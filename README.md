@@ -3,7 +3,8 @@
 GuitarAMI: Augmented Musical Instrument (AMI) using acoustic guitar
 
 [GuitarAMI module - user guide](./GuitarAMI_module.md)
-[Spund Processing Unit - user guide](./GuitarAMI_SPU.md)
+
+[Sound Processing Unit - user guide](./GuitarAMI_SPU.md)
 
 ## Description
 

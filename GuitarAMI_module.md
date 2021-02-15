@@ -1,6 +1,6 @@
 # GuitarAMI Module user guide
 
-![Modules](./images_module/odules.jpg "Modules")
+![Modules](./images_module/modules.jpg "Modules")
 
 - [Usage instructions](#usage-instructions)
   - [Operation modes](#operation-modes)

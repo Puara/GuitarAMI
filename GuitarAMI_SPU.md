@@ -55,7 +55,7 @@ The display shows when the SPU finishes the booting process, and provide visual 
 
 The fourth line indicates: **SC | PD | WiFi mode | Pedalboard**
 
-- The **SC** indicator will appear if a [SuperCollider}(https://supercollider.github.io/) code is running
+- The **SC** indicator will appear if a [SuperCollider](https://supercollider.github.io/) code is running
 - The **PD** indicator will appear if a [Pure Data](https://puredata.info/) patch is running
 - The **WiFi mode** indicator show the WiFi operation mode: **STA** for station mode (SPU as client) and **AP** for access point (SPU as a hotspot)
 - The **PedalBoard** indicator shows which pedalboard is loaded on the plugin host. Check the [Accessing the plugin host](#accessing-the-plugin-host) session for more information
@@ -85,7 +85,7 @@ The SPU shows the WiFi mode as **STA**. In this mode, you can use a SUpercollide
 Before trying to access the SPU configuration options:
 
 - Make sure you are in the same network as your SPU
-  - If using *standalone mode*, connect to the **SPU00X** network. The default password is `mappings`
+  - If using *standalone mode*, connect to the **SPUXXX** network (replace XXX for your SPU's ID number). The default password is `mappings`
   - If using *client mode*, connect both the SPU and the computer to the same network
 
 The SPU is configured as follows:
@@ -100,7 +100,7 @@ You can:
 
 ### Accessing the plugin host
 
-Once you connect to the SPU network, you can access the LV2 plugin host by opening your web browser and typing [http://spu00X.local/](http://spu00X.local/) (replace 00X by your SPU ID number). Alternatively, you can use the SPU's IP address: [http://172.24.1.1/](http://172.24.1.1/). You will be taken to the plugin host (Modep) main page on the SPU:
+Once you connect to the SPU network, you can access the LV2 plugin host by opening your web browser and typing [http://spuXXX.local/](http://spuXXX.local/) (replace XXX by your SPU ID number). Alternatively, you can use the SPU's IP address: [http://172.24.1.1/](http://172.24.1.1/). You will be taken to the plugin host (Modep) main page on the SPU:
 
 ![Plugin host web](./images_spu/plugin_host.jpg "Plugin host web")
 
@@ -122,23 +122,23 @@ They can also be accessed manually. An example of manual access using macOS on t
 
 Open Finder, click in `Go` and in `Connect to Server...`
 
-![Network Access manual](./images_spu/samba_manual1.jpg "Network Access manual")
+![Network Access manual](./images_spu/samba_manual1.png "Network Access manual")
 
-Type the SPU00X address:
+Type the SPUXXX address:
 
-![Network Access manual](./images_spu/samba_manual2.jpg "Network Access manual")
+![Network Access manual](./images_spu/samba_manual2.png "Network Access manual")
 
 Confirm the server name:
 
-![Network Access manual](./images_spu/samba_manual3.jpg "Network Access manual")
+![Network Access manual](./images_spu/samba_manual3.png "Network Access manual")
 
 Enter credentials:
 
-![Network Access manual](./images_spu/samba_manual4.jpg "Network Access manual")
+![Network Access manual](./images_spu/samba_manual4.png "Network Access manual")
 
-Choose the **SPU00X-Patches** folder:
+Choose the **SPUXXX-Patches** folder:
 
-![Network Access manual](./images_spu/samba_manual5.jpg "Network Access manual")
+![Network Access manual](./images_spu/samba_manual5.png "Network Access manual")
 
 The **default.scd** and **default.pd** files will load automatically on boot. If you don't want to start Supercollider or Pure Data on boot, rename the files to any other name. You can edit the files in your computer, amke backup copies or add new patches to this folder.
 

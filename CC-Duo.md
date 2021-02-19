@@ -99,19 +99,19 @@ Visual Feedback:
 
 Example 1:
 
-![Example 1](./The%20Turing%20Test%20(Alex%20Burtzos)/images/example1.png "Example 1")
+![Example 1](./images_CC-Duo/example1.png "Example 1")
 
 Example 2:
 
-![Example 2](./The%20Turing%20Test%20(Alex%20Burtzos)/images/example2.png "Example 2")
+![Example 2](./images_CC-Duo/example2.png "Example 2")
 
 Example 3:
 
-![Example 3](./The%20Turing%20Test%20(Alex%20Burtzos)/images/example3.png "Example 3")
+![Example 3](./images_CC-Duo/example3.png "Example 3")
 
 Example 4:
 
-![Example 4](./The%20Turing%20Test%20(Alex%20Burtzos)/images/example4.png "Example 4")
+![Example 4](./images_CC-Duo/example4.png "Example 4")
 
 <h3 id="mappings-insomnia">Mappings</h3>
 

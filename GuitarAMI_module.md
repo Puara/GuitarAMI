@@ -92,15 +92,17 @@ IMPORTANT: The module needs to be turned ON to charge!
   - /GuitarAMI_module_XXX/gyro [float] [float] [float] (in radians per second)
   - /GuitarAMI_module_XXX/magn [float] [float] [float] (in uTesla)
   - /GuitarAMI_module_XXX/quat [float] [float] [float]
-  - /GuitarAMI_module_XXX/ypr [float] [float] [float] (in degrees)
-  - /GuitarAMI_module_XXX/jab [float] [float] [float]
-  - /GuitarAMI_module_XXX/shake [float] [float] [float]
 - discrete:
   - /GuitarAMI_module_XXX/tap [0 or 1]
   - /GuitarAMI_module_XXX/dtap [0 or 1]
   - /GuitarAMI_module_XXX/ttap [0 or 1]
-  - /GuitarAMI_module_XXX/count [int]
   - /GuitarAMI_module_XXX/battery [int] (percentage)
+- Instrument:
+  - /GuitarAMI_module_XXX/ypr [float] [float] [float] (in degrees)
+  - /GuitarAMI_module_XXX/jab [float] [float] [float]
+  - /GuitarAMI_module_XXX/shake [float] [float] [float]
+  - /GuitarAMI_module_XXX/count [int]
+  - /GuitarAMI_module_XXX/ultTrig [int] [0 or 1]
 
 ## MIDI messages
 
@@ -118,14 +120,15 @@ IMPORTANT: The module needs to be turned ON to charge!
   - CC 85: shake X
   - CC 86: shake Y
   - CC 87: shake Z
-  - CC 88: jab X
-  - CC 89: jab Y
-  - CC 90: jab Z
+  - CC 102: jab X
+  - CC 103: jab Y
+  - CC 104: jab Z
 - discrete:
   - CC 30: tap [0 or 127]
   - CC 31: double tap [0 or 127]
   - CC 14: triple tap [0 or 127]
   - CC 15: touch count starting from 0
+  - CC 89: Ultrasonic trigger [0 or 127]
 
 ## Pure Data test patch
 

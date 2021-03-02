@@ -22,10 +22,9 @@ Check `Inward Gaze (Stafylakis)- Focus - Mvt. II (Inward Gaze).wav`.
 - Piece post-processed with electronics using [Reaper](https://www.reaper.fm/download.php)
 - Use of distortion and delay effects
 - The two movements are about 10 minutes long
+- GuitarAMI as a bridge that provides control possibilities and nuance explotations using instrumental gestures
 
 <h3 id="mappings-focus">Mapping</h3>
-
-> ⚠️ **Info**: Waiting for the Reaper session. Depending on the piece setup, we can use the tracks outside Reaper, and process all the effects (distortion, reverb, delay, etc.) on the GuitarAMI.
 
 ```asciiart
  Steve's GuitarAMI:
@@ -97,22 +96,6 @@ Visual Feedback:
 - Room for playing with the amplitude of the rain and thunder and the placement of the electronics in the foreground/background of the musical texture
 - Tied to score (low spare bandwidth)
 
-Example 1:
-
-![Example 1](./images_CC-Duo/example1.png "Example 1")
-
-Example 2:
-
-![Example 2](./images_CC-Duo/example2.png "Example 2")
-
-Example 3:
-
-![Example 3](./images_CC-Duo/example3.png "Example 3")
-
-Example 4:
-
-![Example 4](./images_CC-Duo/example4.png "Example 4")
-
 <h3 id="mappings-insomnia">Mappings</h3>
 
 ```verbatin
@@ -162,6 +145,22 @@ Visual Feedback:
 Check `The Turing Test - Complete Score.pdf`
 - The electronics in the Turing Test begin around 1 minute into the piece
 - All of the electronics and guitar loops will be sequenced into one track by the composer
+
+Example 1:
+
+![Example 1](./images_CC-Duo/example1.png "Example 1")
+
+Example 2:
+
+![Example 2](./images_CC-Duo/example2.png "Example 2")
+
+Example 3:
+
+![Example 3](./images_CC-Duo/example3.png "Example 3")
+
+Example 4:
+
+![Example 4](./images_CC-Duo/example4.png "Example 4")
 
 <h3 id="mappings-turing">Mappings</h3>
 

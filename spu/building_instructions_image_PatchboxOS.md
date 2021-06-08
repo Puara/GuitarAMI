@@ -986,9 +986,8 @@ sudo chmod +x ./install_libmapper.sh
 If needed, add mapper to PYTHONPATH:
 
 - get *SITEDIR* or python 2.X using `python -m site --user-site`, and 3.X using `python3 -m site --user-site`
-- create them if they don't exist: `mkdir -p "$SITEDIR"`
-- create new .pth file with our path: `echo "$HOME/sources/libmapper/swig" > "$SITEDIR/mapper.pth"`
-- run `python -m mapper` and `python3 -m mapper`
+
+Reboot
 
 Some modifications on Webmapper config to make it work fine:
 

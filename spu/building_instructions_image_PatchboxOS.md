@@ -876,126 +876,125 @@ rm $0
 EOF
 ```
 
-## Install Libmapper/Webmapper/LMJack
+## Install Libmapper
+
+- Dependencies
 
 ```bash
-cat <<- "EOF" | tee ~/sources/install_libmapper.sh
-#!/bin/bash
-
-# exit when any command fails
-set -e
-
-# keep track of the last executed command
-trap 'last_command=$current_command; current_command=$BASH_COMMAND' DEBUG
-# echo an error message before exiting
-trap 'echo "\"${last_command}\" command filed with exit code $?."' EXIT
-
-echo
-echo
-echo 'GuitarAMI base instalation bash script'
-echo 'Libmapper/Webmapper/LMJack'
-echo
-echo 'Do not run with SUDO!!'
-echo
-echo
-
-read -p "Do you want to continue? " -n 1 -r
-echo
-if [[ $REPLY =~ ^[Yy]$ ]]
-then
-echo
-echo
-echo '<--------------------INSTALLING DEPENDENCIES------------------->'
-sudo apt install git python-dev python3-dev python-pip python3-pip autoconf libtool automake libasound2-dev ant libfftw3-3 python-numpy python3-numpy -y
+sudo apt install git python3-dev python3-pip autoconf libtool automake libasound2-dev ant libfftw3-3 python3-numpy -y
 sudo apt install -y default-jdk
-echo
-echo
-echo '<----------------------DOWNLOADING liblo----------------------->'
+sudo apt install 2to3 -y
+sudo apt install swig -y
+pip3 install netifaces
+```
+
+- Liblo
+
+```bash
 cd ~/sources
 wget https://sourceforge.net/projects/liblo/files/liblo/0.31/liblo-0.31.tar.gz
-echo
-echo
-echo '<------------------------UNPACKING liblo----------------------->'
 tar -xvf liblo-0.31.tar.gz
-echo
-echo
-echo '<-----------------------INSTALLING liblo----------------------->'
-cd liblo-0.31
+cd ~/sources/liblo-0.31
 chmod a+rwx configure
 ./configure
 make check
 sudo make install
-echo
-echo
-echo '<--------------------DOWNLOADING libmapper-------------------->'
-cd ~/sources
-git clone https://www.github.com/libmapper/libmapper
-cd libmapper
-echo
-echo
-echo '<-----------------------INSTALLING SWIG----------------------->'
-sudo apt install 2to3 -y
-sudo apt install swig -y
-echo
-echo
-echo '<---------------------INSTALLING libmapper-------------------->'
-./autogen.sh PYTHON=python3
-make
-sudo make install
-export PKG_CONFIG_PATH=~/sources/libmapper
-export LD_LIBRARY_PATH=/usr/local/lib/
-sudo ldconfig
-cd ~
-echo
-echo
-echo '<---------------------INSTALLING NETIFACES-------------------->'
-pip install netifaces
-pip3 install netifaces
-echo
-echo  
-echo '<--------------------DOWNLOADING WEBMAPPER-------------------->'
-cd ~/sources
-git clone https://www.github.com/libmapper/webmapper
-echo
-echo  
-echo '<---------------------INSTALLING WEBMAPPER-------------------->'
-cd webmapper
-cp ~/sources/libmapper/swig/mapper.py ./
-cp ~/sources/libmapper/swig/_mapper*.so ./
-export LD_LIBRARY_PATH=/usr/local/lib
-echo  >> ~/.profile
-echo 'export LD_LIBRARY_PATH=/usr/local/lib' >> ~/.profile
-echo
-echo  
-echo 'Installation complete'
-
-trap - EXIT
-exit 0
-
-fi
-
-EOF
 ```
+
+- Libmapper
 
 ```bash
 cd ~/sources
-sudo chmod +x ./install_libmapper.sh
-./install_libmapper.sh
+git clone https://www.github.com/libmapper/libmapper
+cd ~/sources/libmapper
+./autogen.sh PYTHON=python3
+make
+sudo make install
+```
+
+## Install umapper
+
+```bash
+cd ~/sources
+git clone https://github.com/libmapper/umapper.git
+cd ~/sources/umapper
+sudo chmod +x umapper
+```
+
+## Install Webmapper
+
+```bash
+cd ~/sources
+git clone https://www.github.com/libmapper/webmapper
+cd ~/sources/webmapper
+cp ~/sources/libmapper/swig/mapper.py ./
+cp ~/sources/libmapper/swig/_mapper*.so ./
+```
+
+Maybe the following is also needed:
+
+```bash
+export LD_LIBRARY_PATH=/usr/local/lib
+~/.profile
+'export LD_LIBRARY_PATH=/usr/local/lib' >> ~/.profile
 ```
 
 If needed, add mapper to PYTHONPATH:
 
-- get *SITEDIR* or python 2.X using `python -m site --user-site`, and 3.X using `python3 -m site --user-site`
+- get *SITEDIR* or python 3.X using `python3 -m site --user-site`
 
 Reboot
 
-Some modifications on Webmapper config to make it work fine:
+Set the code to load at boot:
 
-- `nano -l ~/sources/webmapper/webmapper.py`
-  - Add after line 44: `g.set_interface('eth0')` (change to wlan0 after setup is done)
-  - in get_interfaces (~line 338):
+```bash
+cat <<- "EOF" | sudo tee /lib/systemd/system/webmapper.service
+[Unit]
+Description=Webmapper service
+After=multi-user.target
 
-      ```python
-      elif ( 'eth0' in networkInterfaces['available'] ):
-      networkInterfaces['active'] = 'eth0'
-      ```
+[Service]
+Type=idle
+WorkingDirectory=/home/patch/
+User=patch
+ExecStart=/usr/bin/python3 /home/patch/sources/webmapper/webmapper.py
+
+[Install]
+WantedBy=multi-user.target
+EOF
+```
+
+```bash
+sudo chmod 644 /lib/systemd/system/webmapper.service
+sudo systemctl daemon-reload
+sudo systemctl enable webmapper.service
+```
+
+To access webmapper in your browser, go to `http://spu003.local:50000/`(change the SPU address accordingly)
+
+
+Obs: this service is started as a user service
+
+```bash
+cat <<- "EOF" | tee ~/.config/systemd/user/webmapper.service
+[Unit]
+Description=Run Webmapper service
+After=multi-user.target
+
+[Service]
+Type=idle
+ExecStart=/usr/bin/python3 /home/patch/sources/webmapper/webmapper.py --no-browser
+
+[Install]
+WantedBy=default.target
+EOF
+```
+
+```bash
+sudo chmod 644 ~/.config/systemd/user/webmapper.service
+systemctl --user daemon-reload
+systemctl --user enable webmapper.service
+```
+
+systemctl --user start webmapper.service
+systemctl --user status webmapper.service

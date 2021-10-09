@@ -1,0 +1,10 @@
+[Unit]
+Description=GuitarAMI update tool
+After=multi-user.target
+
+[Service]
+Type=idle
+ExecStart=/home/patch/sources/lcd/updatetool.sh
+
+[Install]
+WantedBy=multi-user.target

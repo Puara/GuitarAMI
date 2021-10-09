@@ -1,0 +1,12 @@
+#!/bin/sh
+
+# model script to update the GuitarAMI.
+# This file will be deleted after the upgrade is complete
+# Edu Meneses, 2021, IDMIL, CIRMMT, McGill University
+
+# Do your stuff:
+
+sed -i.bak 's/, bounce_time=0.005//' ~/sources/lcd/buttonOSC.py
+
+# remove this script
+rm $0

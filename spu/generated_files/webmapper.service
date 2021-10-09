@@ -1,0 +1,12 @@
+[Unit]
+Description=Webmapper service
+After=multi-user.target
+
+[Service]
+Type=idle
+WorkingDirectory=/home/patch/
+User=patch
+ExecStart=/usr/bin/python3 /home/patch/sources/webmapper/webmapper.py
+
+[Install]
+WantedBy=multi-user.target

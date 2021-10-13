@@ -29,18 +29,19 @@
 #import
 import RPi.GPIO as GPIO
 import time
-from time import sleep
-from datetime import datetime
-from time import strftime
+#from time import sleep
+#from signal import pause
+#from datetime import datetime
+#from time import strftime
+from threading import Event
 import socket
 import os
+import types
+import sys
 
 # Import needed modules from osc4py3
 from osc4py3.as_eventloop import *
 from osc4py3 import oscmethod as osm
-
-import types
-import sys
 
 # Define GPIO to LCD mapping
 LCD_RS = 26
@@ -119,15 +120,15 @@ def main():
     lcd_string("GuitarAMI", LCD_LINE_1)
     lcd_string("Booting...",LCD_LINE_3)
 
-    #time.sleep(10.0) # 1 second delay
+    # time.sleep(10.0) # 1 second delay
     lcd_byte(0x01,LCD_CMD)
 
     lcd_string("GuitarAMI", LCD_LINE_1)
     lcd_string("Boot Complete", LCD_LINE_3)
     lcd_string("Have Fun!", LCD_LINE_4)
- 
+
     while True:
-        osc_process()
+        forever = Event(); forever.wait()
 
 def lcd_string(message,pos):
     # Send string to display

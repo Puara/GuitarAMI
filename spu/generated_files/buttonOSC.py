@@ -24,7 +24,8 @@
 
 
 from gpiozero import Button
-from signal import pause
+#from signal import pause
+from threading import Event
 
 import sys
 import argparse
@@ -59,6 +60,7 @@ def button_callback(arg):
     time.sleep(debounce_time)    # Wait a while for the pin to settle
     msg = oscbuildparse.OSCMessage(f"{argumentos.namespace}/button{buttonPin.index(arg.pin.number)}", ",i", [arg.value])
     osc_send(msg, "oscclient")
+    osc_process()
 
 button1 = Button(buttonPin[1], pull_up=True)
 button2 = Button(buttonPin[2], pull_up=True)
@@ -73,7 +75,7 @@ button3.when_released = button_callback
 
 def main():
     while True:
-        osc_process()
+        forever = Event(); forever.wait()
 
 if __name__ == '__main__':
 

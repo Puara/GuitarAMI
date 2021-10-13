@@ -40,13 +40,15 @@ def updateStatus():
     msgPedal = oscbuildparse.OSCMessage("/lcd", ",sii", [pedalStatus, 4, 11])
     bun = oscbuildparse.OSCBundle(oscbuildparse.OSC_IMMEDIATELY,[msgSC, msgPD, msgWifi, msgPedal])
     osc_send(bun, "lcd")
+    osc_process()
     threading.Timer(5, updateStatus).start() # scheduling event every 5 seconds
 
 updateStatus()
 
 def main():
     while True:
-        osc_process()
+        forever = threading.Event(); forever.wait()
+
 
 if __name__ == '__main__':
 

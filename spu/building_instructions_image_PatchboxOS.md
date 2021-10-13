@@ -207,18 +207,19 @@ cat <<- "EOF" | tee ~/sources/lcd/lcd.py
 #import
 import RPi.GPIO as GPIO
 import time
-from time import sleep
-from datetime import datetime
-from time import strftime
+#from time import sleep
+#from signal import pause
+#from datetime import datetime
+#from time import strftime
+from threading import Event
 import socket
 import os
+import types
+import sys
 
 # Import needed modules from osc4py3
 from osc4py3.as_eventloop import *
 from osc4py3 import oscmethod as osm
-
-import types
-import sys
 
 # Define GPIO to LCD mapping
 LCD_RS = 26
@@ -297,15 +298,15 @@ def main():
     lcd_string("GuitarAMI", LCD_LINE_1)
     lcd_string("Booting...",LCD_LINE_3)
 
-    #time.sleep(10.0) # 1 second delay
+    # time.sleep(10.0) # 1 second delay
     lcd_byte(0x01,LCD_CMD)
 
     lcd_string("GuitarAMI", LCD_LINE_1)
     lcd_string("Boot Complete", LCD_LINE_3)
     lcd_string("Have Fun!", LCD_LINE_4)
- 
+
     while True:
-        osc_process()
+        forever = Event(); forever.wait()
 
 def lcd_string(message,pos):
     # Send string to display
@@ -463,13 +464,15 @@ def updateStatus():
     msgPedal = oscbuildparse.OSCMessage("/lcd", ",sii", [pedalStatus, 4, 11])
     bun = oscbuildparse.OSCBundle(oscbuildparse.OSC_IMMEDIATELY,[msgSC, msgPD, msgWifi, msgPedal])
     osc_send(bun, "lcd")
+    osc_process()
     threading.Timer(5, updateStatus).start() # scheduling event every 5 seconds
 
 updateStatus()
 
 def main():
     while True:
-        osc_process()
+        forever = threading.Event(); forever.wait()
+
 
 if __name__ == '__main__':
 
@@ -548,7 +551,8 @@ cat <<- "EOF" | tee ~/sources/lcd/buttonOSC.py
 
 
 from gpiozero import Button
-from signal import pause
+#from signal import pause
+from threading import Event
 
 import sys
 import argparse
@@ -583,6 +587,7 @@ def button_callback(arg):
     time.sleep(debounce_time)    # Wait a while for the pin to settle
     msg = oscbuildparse.OSCMessage(f"{argumentos.namespace}/button{buttonPin.index(arg.pin.number)}", ",i", [arg.value])
     osc_send(msg, "oscclient")
+    osc_process()
 
 button1 = Button(buttonPin[1], pull_up=True)
 button2 = Button(buttonPin[2], pull_up=True)
@@ -597,7 +602,7 @@ button3.when_released = button_callback
 
 def main():
     while True:
-        osc_process()
+        forever = Event(); forever.wait()
 
 if __name__ == '__main__':
 

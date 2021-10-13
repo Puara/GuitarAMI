@@ -40,6 +40,3 @@ sudo chmod 644 ~/.config/systemd/user/jacktrip.service
 systemctl --user daemon-reload
 systemctl --user enable jacktrip.service
 ```
-
-systemctl --user start jacktrip.service
-systemctl --user status jacktrip.service

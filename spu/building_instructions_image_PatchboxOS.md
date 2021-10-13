@@ -672,9 +672,9 @@ To get a list on the computer type **jack** and hit *Tab*
 | jack_samplerate | jack-scope          | jack_server_control        | jack_session_notify | jack_showtime          |
 | jack_thru       | jack_transport      | jack-transport             | jack-udp            | jack_unload            |
 | jack_control    | jack_cpu            | jack_cpu_load              | jackd               | jack_wait              |
-| jack_freewheel  | jack_iodelay        | jack-keyboard              | jack_latent_client  |
-| jack_midiseq    | jack_midisine       | jack_monitor_client        | jack_multiple_metro |
-| jack-plumbing   | jack-rack |jack_rec | jack-record                | jack_test           |
+| jack_freewheel  | jack_iodelay        | jack-keyboard              | jack_latent_client  | jack_midiseq           |
+| jack_midisine   | jack_monitor_client | jack_multiple_metro        | jack-plumbing       |
+| jack-rack       | jack_rec            | jack-record                | jack_test           |
 | jack_simdtests  | jack_simple_client  | jack_simple_session_client | jack_zombie         |
 
 ## Places to replace names in files
@@ -1000,6 +1000,3 @@ sudo chmod 644 ~/.config/systemd/user/webmapper.service
 systemctl --user daemon-reload
 systemctl --user enable webmapper.service
 ```
-
-systemctl --user start webmapper.service
-systemctl --user status webmapper.service

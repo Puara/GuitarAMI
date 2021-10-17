@@ -1,5 +1,5 @@
 //****************************************************************************//
-// T-Stick 3G                                                                 //
+// GuitarAMI                                                                  //
 // Input Devices and Music Interaction Laboratory (IDMIL), McGill University  //
 // Edu Meneses (2021) - https://www.edumeneses.com                            //
 //****************************************************************************//

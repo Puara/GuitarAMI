@@ -1000,3 +1000,18 @@ sudo chmod 644 ~/.config/systemd/user/webmapper.service
 systemctl --user daemon-reload
 systemctl --user enable webmapper.service
 ```
+
+## Places to change the SPU name when cloning the SD
+
+- Enter PiSound configuration: `sudo pisound-config`
+  - Change Pisound HotSpot settings:
+    - ssid: `SPU00X` (use SPU's ID)
+- Enter Raspi-Config: `sudo raspi-config`
+  - System options:
+    - Hostname: `SPU00X` (use SPU's ID)
+- `sudo tee /etc/samba/smb.conf`, change all "SPU" references
+
+- SPU00X
+  - SSID hotspot settings: `sudo pisound-config`
+  - Samba config: `sudo nano /etc/samba/smb.conf`
+  - SPU Hostname: `sudo raspi-config`

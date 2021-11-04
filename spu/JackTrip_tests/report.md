@@ -47,7 +47,7 @@ Meeting summary:
 
 Results Summary:
 
-| Description             | Sample rate | average latency |
+| Description             | Sample rate | Average latency |
 | ----------------------- | ----------- | --------------- |
 | Loopback                | 48 kHz      | 8.923 ms        |
 | JackTrip with Pisound   | 48 kHz      | 30.256 ms       |

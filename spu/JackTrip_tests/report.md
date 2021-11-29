@@ -8,7 +8,7 @@ Report in progress used on the JackTrip tests and hardware assembly using the Gu
 - [X] Duplicate the existing setup (SPU + JackTrip) and automatically set one as a client and another as a server (Oct. 18-22nd, 2021).
 - [X] [Latency tests](#october-28th-2021) between the 2 SPUs in a local network on Brams (Oct. 28th, 2021).
 - [X] [Latency measurements](#local-network-latency-results) between the 2 SPUs in a local network using jack-delay (Nov. 2nd to 4th, 2021).
-- [ ] Test internet latency between the 2 SPUs. One SPU will be located at Brams and another at IDMIL. We will need IT on both universities to fully open UDP communication at port 4464, and we'll probably need to set a VPN between both institutions (TBD, probably Nov. 5th, 2021).
+- [X] Test internet latency between the 2 SPUs. One SPU will be located at Brams and another at IDMIL (or close location nearby). We will need IT on both universities to fully open UDP communication at port 4464, and we'll probably need to set a VPN between both institutions (TBD, probably Nov. 5th, 2021).
 - [ ] Define audio interface for the SingWell SPUs (TBD).
 - [ ] Build 2 SPUs for the project (TBD).
 - [ ] Mailing one of the SPUs to uToronto and final tests (TBD).

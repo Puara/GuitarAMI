@@ -127,7 +127,7 @@ sudo systemctl enable ajsnapshot.service
 
 Make sure JackTrip is running.
 
-- Connect the necessary audio cable to create a loopback on the audio interface (audii OUT -> audio IN)
+- Connect the necessary audio cable to create a loopback on the audio interface (audio OUT -> audio IN)
 - Remove all Jack connections of both machines: `aj-snapshot -xj`
 - For the loopback (same interface test): `jack_delay -I system:capture_2 -O system:playback_2`
 - For JackTrip (jack_delay running on the server):

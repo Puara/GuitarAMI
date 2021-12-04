@@ -120,7 +120,7 @@ After=multi-user.target
 [Service]
 Type=idle
 Restart=always
-ExecStart=/home/patch/sources/jacktrip/builddir/jacktrip -c 132.204.140.247 --clientname jacktrip_client
+ExecStart=/home/patch/sources/jacktrip/builddir/jacktrip -c 192.168.1.1 --clientname jacktrip_client
 
 [Install]
 WantedBy=default.target
@@ -226,7 +226,7 @@ To check Jack logs: `sudo journalctl -u jack.service`
 ## Setting the server IP at the client box
 
 - Edit the *jacktrip_client.service* file: `nano ~/.config/systemd/user/jacktrip_client.service`
-- Replace the IP at the line `ExecStart=/home/patch/sources/jacktrip/builddir/jacktrip -c 132.204.140.247 --clientname jacktrip_client` for the new IP address
+- Replace the IP at the line `ExecStart=/home/patch/sources/jacktrip/builddir/jacktrip -c 192.168.1.1 --clientname jacktrip_client` for the new IP address
 - Save the file (Ctrl+O, then hit ENTER in *nano*) and exit (Ctrl+X in *nano*).
 - Update the systemctl daemon: `systemctl --user daemon-reload`
 - Restart the service: `systemctl --user restart jacktrip_client.service`

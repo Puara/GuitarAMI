@@ -5,7 +5,6 @@
   - [Hardware assembly](#hardware-assembly)
   - [Configuring Jack](#configuring-jack)
   - [Setting the server IP for JackTrip client boxes](#setting-the-server-ip-for-jacktrip-client-boxes)
-  - [current mac addresses](#current-mac-addresses)
 
 ## BOM
 
@@ -47,17 +46,8 @@ The recommended configuration for the Scarlett Solo is *Sr=48000, bs=128, period
 ## Setting the server IP for JackTrip client boxes
 
 - Edit the *jacktrip_client.service* file: `nano ~/.config/systemd/user/jacktrip_client.service`
-- Replace the IP at the line `ExecStart=/home/patch/sources/jacktrip/builddir/jacktrip -c 132.204.140.247 --clientname jacktrip_client` for the new IP address
+- Replace the IP at the line `ExecStart=/home/patch/sources/jacktrip/builddir/jacktrip -c 192.168.1.1 --clientname jacktrip_client` for the new IP address
 - Save the file (Ctrl+O, then hit ENTER in *nano*) and exit (Ctrl+X in *nano*).
 - Update the systemctl daemon: `systemctl --user daemon-reload`
 - Restart the service: `systemctl --user restart jacktrip_client.service`
 - To check connection (if the server is availalbe and accessible through the given IP): `systemctl --user status jacktrip_client.service`
-
-## current mac addresses
-
-- JackTrip001
-  - ethernet: e4:5f:01:65:ae:dd
-  - wireless: e4:5f:01:65:ae:de
-- JackTrip002
-  - ethernet: e4:5f:01:5d:4a:ae
-  - wireless: e4:5f:01:5d:4a:af

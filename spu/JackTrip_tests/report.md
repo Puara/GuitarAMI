@@ -9,9 +9,9 @@ Report in progress used on the JackTrip tests and hardware assembly using the Gu
 - [X] [Latency tests](#october-28th-2021) between the 2 SPUs in a local network on Brams (Oct. 28th, 2021).
 - [X] [Latency measurements](#local-network-latency-results) between the 2 SPUs in a local network using jack-delay (Nov. 2nd to 4th, 2021).
 - [X] Test internet latency between the 2 SPUs. One SPU will be located at Brams and another at IDMIL (or close location nearby). We will need IT on both universities to fully open UDP communication at port 4464, and we'll probably need to set a VPN between both institutions (TBD, probably Nov. 5th, 2021).
-- [ ] Define audio interface for the SingWell SPUs (TBD).
-- [ ] Build 2 SPUs for the project (TBD).
-- [ ] Mailing one of the SPUs to uToronto and final tests (TBD).
+- [X] Define audio interface for the SingWell SPUs ([Focusrite Scarlett Solo](https://focusrite.com/en/audio-interface/scarlett/scarlett-solo)).
+- [X] Build 2 SPUs for the project (late November 2021).
+- [ ] Final tests at UdeM (second week of December 2021).
 
 ## October 14th, 2021
 
@@ -37,7 +37,7 @@ Meeting summary:
     - Average latency: 30.256 ms
   - Test 2 - Jack configuration: 96000Hz (sample rate), 128 samples (buffer size), 2 period
     - Average latency: 13.125 ms
-    - ECDF: ![Latency (ECDF) - JackTrip (96 kHz, 128 buffer, 2 period)](latency_test.png)
+    - ECDF: ![Latency (ECDF) - JackTrip (96 kHz, 128 buffer, 2 period)](./pics/latency_test.png)
 
 - Latency bettween 2 SPUs (local network) using the [Presonus AudioBox USB](https://www.presonus.com/products/audiobox-usb) for 48 kHz and [Motu Ultra Lite  mk4](https://motu.com/en-us/news/introducing-the-ultralite-mk4/) for 96 kHz on the client end:
   - Test 3 - Jack configuration: 48000Hz (sample rate), 128 samples (buffer size), 2 period
@@ -54,3 +54,8 @@ Results Summary:
 | JackTrip with Pisound   | 96 kHz      | 13.125 ms       |
 | JackTrip with USB audio | 48 kHz      | 29.645 ms       |
 | JackTrip with USB audio | 96 kHz      | 17.617 ms       |
+
+## Latency tests with the final JackTrip boxes + Focusrite Scarlett Solo
+
+- Jack configuration: 96000Hz (sample rate), 128 samples (buffer size), 3 period
+  - Average latency: 19.366 ms (1859.152 frames)

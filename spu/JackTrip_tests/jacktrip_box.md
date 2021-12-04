@@ -1,6 +1,20 @@
 # JackTrip box recipe
 
-Hardware:
+[Hardware](#hardware)
+[Prepare PatchboxOS](#prepare-patchboxos)
+[Finish PatchboxOS config](#finish-patchboxos-config)
+[Compiling and running JackTrip headless on the SPU](#compiling-and-running-jacktrip-headless-on-the-spu)
+[To manually use as a client](#to-manually-use-as-a-client)
+[Adding a service to start JackTrip server](#adding-a-service-to-start-jacktrip-server)
+[Adding a service to start JackTrip client (in this example, the server is spu003.local)](#adding-a-service-to-start-jacktrip-client-in-this-example-the-server-is-spu003local)
+[Install aj-snapshot](#install-aj-snapshot)
+[Mapping using jack in CLI](#mapping-using-jack-in-cli)
+[Latency tests](#latency-tests)
+[Jack available commands](#jack-available-commands)
+[Places to change the SPU name when cloning the SD](#places-to-change-the-spu-name-when-cloning-the-sd)
+[Setting the server IP at the client box](#setting-the-server-ip-at-the-client-box)
+
+## Hardware
 
 - Raspberry Pi 4 B with heatsinks and fan (optional)
 - Rpi case
@@ -19,7 +33,7 @@ Official information on building JackTrip on Rpi4 available at [https://help.jac
   - ssh to th SPU: `ssh patch@ip_address` (The default user name is *patch* and its password is *blokaslabs*). Use ethernet (wired) connection.
     - update PatchBox
     - set new password: `mappings` or orther password of choice
-    - choose default soundcard: USB, 96000, 64, 2
+    - choose default soundcard: USB, 48000, 128, 3
     - select boot: *console*
     - connect to network: *no*
     - choose module: *none*
@@ -178,7 +192,7 @@ Make sure JackTrip is running.
 
 - Connect the necessary audio cable to create a loopback on the client's audio interface (audio OUT -> audio IN)
 - For the loopback (same interface test): `jack_delay -I system:capture_2 -O system:playback_2`
-- run the test: `jack_delay -O spu005.local:send_2 -I spu005.local:receive_2`
+- run the test: `jack_delay -O jacktrip_client.local:send_2 -I jacktrip_client.local:receive_2`
 
 ## Jack available commands
 
@@ -208,3 +222,12 @@ To check Jack logs: `sudo journalctl -u jack.service`
 - Enter Raspi-Config: `sudo raspi-config`
   - System options:
     - Hostname: `jacktrip00X` (use chosen ID)
+
+## Setting the server IP at the client box
+
+- Edit the *jacktrip_client.service* file: `nano ~/.config/systemd/user/jacktrip_client.service`
+- Replace the IP at the line `ExecStart=/home/patch/sources/jacktrip/builddir/jacktrip -c 132.204.140.247 --clientname jacktrip_client` for the new IP address
+- Save the file (Ctrl+O, then hit ENTER in *nano*) and exit (Ctrl+X in *nano*).
+- Update the systemctl daemon: `systemctl --user daemon-reload`
+- Restart the service: `systemctl --user restart jacktrip_client.service`
+- To check connection (if the server is availalbe and accessible through the given IP): `systemctl --user status jacktrip_client.service`

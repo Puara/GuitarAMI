@@ -22,7 +22,7 @@ To replicate the JackTrip boxes, you'll need:
 
 - Follow the instructions available for the Raspberry Pi enclosure purchased. For the first 2 boxes, the enclosure instructions are available at [https://www.canakit.com/pi-case](https://www.canakit.com/pi-case)
 - Flash the JackTrip box image (**jacktripbox.img.gz**) into the SD card using [ApplePiBaker](https://www.tweaking4all.com/hardware/raspberry-pi/applepi-baker-v2/), [balenaEtcher](https://www.balena.io/etcher/), or diskutil (dd).
-- Put the SD card on the JackTrip box, connect the audio interface/cables according to the [user guide](jacktrip_box_user_guide.md), and turn the Raspberry Pi on. You can use a monitor, keyboard to control the JackTrip box during setup. It is also possible to connect to the JackTrip box using *ssh*.
+- Put the SD card on the JackTrip box, connect the audio interface/cables according to the [user guide](jacktrip_box_user_guide.md), and turn on the Raspberry Pi. You can use a monitor and keyboard to control the JackTrip box during setup. It is also possible to connect to the JackTrip box using *ssh*.
 - Enter PiSound configuration: `sudo pisound-config`
   - Change Pisound HotSpot settings:
     - ssid: `jacktrip00X` (use SPU's ID)
@@ -41,7 +41,7 @@ To replicate the JackTrip boxes, you'll need:
 
 If the user wants to replace the audio interface or try different settings, we can run the `patchbox` command and change the Jack audio configuration.
 
-The recommended configuration for the Scarlett Solo is *Sr=48000, bs=128, period=3*. More agressive configurations can be tested in faster networks, as the Scarlett Solo can use *Sr=96000, bs=128, period=2* locally without any issues.
+The recommended configuration for the Scarlett Solo is *Sr=48000, bs=128, period=3*. More aggressive configurations can be tested in faster networks, as the Scarlett Solo can use *Sr=96000, bs=128, period=2* locally without any issues.
 
 ## Setting the server IP for JackTrip client boxes
 
@@ -50,4 +50,4 @@ The recommended configuration for the Scarlett Solo is *Sr=48000, bs=128, period
 - Save the file (Ctrl+O, then hit ENTER in *nano*) and exit (Ctrl+X in *nano*).
 - Update the systemctl daemon: `systemctl --user daemon-reload`
 - Restart the service: `systemctl --user restart jacktrip_client.service`
-- To check connection (if the server is availalbe and accessible through the given IP): `systemctl --user status jacktrip_client.service`
+- To check connection (if the server is available and accessible through the given IP): `systemctl --user status jacktrip_client.service`

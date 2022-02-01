@@ -219,6 +219,7 @@ import sys
 
 # Import needed modules from osc4py3
 from osc4py3.as_eventloop import *
+#from osc4py3.as_allthreads import *
 from osc4py3 import oscmethod as osm
 
 # Define GPIO to LCD mapping
@@ -305,8 +306,10 @@ def main():
     lcd_string("Boot Complete", LCD_LINE_3)
     lcd_string("Have Fun!", LCD_LINE_4)
 
+    #while True:
+    #    forever = Event(); forever.wait()
     while True:
-        forever = Event(); forever.wait()
+        osc_process()
 
 def lcd_string(message,pos):
     # Send string to display
@@ -327,8 +330,8 @@ def lcd_init():
 def lcd_byte(bits, mode):
     # Send byte to data pins
     # bits = data
-    # mode = True  for character
-    #        False for command
+    # mode = True  for character
+    #        False for command
 
     GPIO.output(LCD_RS, mode) # RS
 

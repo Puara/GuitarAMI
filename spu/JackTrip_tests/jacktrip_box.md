@@ -1,18 +1,20 @@
 # JackTrip box recipe
 
-[Hardware](#hardware)
-[Prepare PatchboxOS](#prepare-patchboxos)
-[Finish PatchboxOS config](#finish-patchboxos-config)
-[Compiling and running JackTrip headless on the SPU](#compiling-and-running-jacktrip-headless-on-the-spu)
-[To manually use as a client](#to-manually-use-as-a-client)
-[Adding a service to start JackTrip server](#adding-a-service-to-start-jacktrip-server)
-[Adding a service to start JackTrip client (in this example, the server is spu003.local)](#adding-a-service-to-start-jacktrip-client-in-this-example-the-server-is-spu003local)
-[Install aj-snapshot](#install-aj-snapshot)
-[Mapping using jack in CLI](#mapping-using-jack-in-cli)
-[Latency tests](#latency-tests)
-[Jack available commands](#jack-available-commands)
-[Places to change the SPU name when cloning the SD](#places-to-change-the-spu-name-when-cloning-the-sd)
-[Setting the server IP at the client box](#setting-the-server-ip-at-the-client-box)
+- [JackTrip box recipe](#jacktrip-box-recipe)
+  - [Hardware](#hardware)
+  - [Prepare PatchboxOS](#prepare-patchboxos)
+  - [Finish PatchboxOS config](#finish-patchboxos-config)
+  - [Compiling and running JackTrip headless on the SPU](#compiling-and-running-jacktrip-headless-on-the-spu)
+  - [To manually use as a client](#to-manually-use-as-a-client)
+  - [Adding a service to start JackTrip server](#adding-a-service-to-start-jacktrip-server)
+  - [Adding a service to start JackTrip client (in this example, the server is spu003.local)](#adding-a-service-to-start-jacktrip-client-in-this-example-the-server-is-spu003local)
+  - [Install aj-snapshot](#install-aj-snapshot)
+  - [Mapping using jack in CLI](#mapping-using-jack-in-cli)
+  - [Latency tests](#latency-tests)
+  - [Jack available commands](#jack-available-commands)
+  - [Mosquitto MTQQ server (for messaging)](#mosquitto-mtqq-server-for-messaging)
+  - [Places to change the SPU name when cloning the SD](#places-to-change-the-spu-name-when-cloning-the-sd)
+  - [Setting the server IP at the client box](#setting-the-server-ip-at-the-client-box)
 
 ## Hardware
 
@@ -22,7 +24,7 @@
 - SD card (min 8 GB)
 - USB audio interface (recommended: Focusrite Scarlett Solo)
 
-Official information on building JackTrip on Rpi4 available at [https://help.jacktrip.org/hc/en-us/articles/1500009727561-Build-a-Raspberry-Pi-4B-Computer-with-JackTrip](https://help.jacktrip.org/hc/en-us/articles/1500009727561-Build-a-Raspberry-Pi-4B-Computer-with-JackTrip)
+Official information on building JackTrip on Rpi4 is available at [https://help.jacktrip.org/hc/en-us/articles/1500009727561-Build-a-Raspberry-Pi-4B-Computer-with-JackTrip](https://help.jacktrip.org/hc/en-us/articles/1500009727561-Build-a-Raspberry-Pi-4B-Computer-with-JackTrip)
 
 ## Prepare PatchboxOS
 
@@ -196,7 +198,7 @@ Make sure JackTrip is running.
 
 ## Jack available commands
 
-To get a list on the computer type **jack** and hit *Tab*
+To get a list on the computer, type **jack** and hit *Tab*
 
 |command          |command              |command                     |command              |command                 |
 |-----------------|---------------------|----------------------------|---------------------|------------------------|
@@ -214,6 +216,53 @@ To get a list on the computer type **jack** and hit *Tab*
 
 To check Jack logs: `sudo journalctl -u jack.service`
 
+## Mosquitto MTQQ server (for messaging)
+
+Install Mosquitto: `sudo apt install -y mosquitto mosquitto-clients`
+
+Set both client and server to listen to the server's broker: `mosquitto_sub -h jacktrip001.local -t message`
+
+Send periodic messages from each machine:
+
+```bash
+cat <<- "EOF" | sudo tee /etc/systemd/system/ping.service
+[Unit]
+Description=Service for sending ping MTQQ messages
+Wants=ping.timer
+
+
+[Service]
+Type=oneshot
+ExecStart=sh -c 'mosquitto_pub -h "jacktrip001.local" -t "message" -m "Jacktrip001 is up"'
+
+[Install]
+WantedBy=multi-user.target
+EOF
+```
+
+```bash
+cat <<- "EOF" | sudo tee /etc/systemd/system/ping.timer
+[Unit]
+Description=Service for sending ping MTQQ messages
+Requires=ping.service
+
+[Timer]
+Unit=ping.service
+OnUnitInactiveSec=1s
+AccuracySec=1s
+
+[Install]
+WantedBy=timers.target
+EOF
+```
+
+Enable timer
+
+```bash
+sudo systemctl daemon-reload
+sudo systemctl enable ping.timer
+```
+
 ## Places to change the SPU name when cloning the SD
 
 - Enter PiSound configuration: `sudo pisound-config`
@@ -228,6 +277,9 @@ To check Jack logs: `sudo journalctl -u jack.service`
 - Edit the *jacktrip_client.service* file: `nano ~/.config/systemd/user/jacktrip_client.service`
 - Replace the IP at the line `ExecStart=/home/patch/sources/jacktrip/builddir/jacktrip -c 192.168.1.1 --clientname jacktrip_client` for the new IP address
 - Save the file (Ctrl+O, then hit ENTER in *nano*) and exit (Ctrl+X in *nano*).
-- Update the systemctl daemon: `systemctl --user daemon-reload`
-- Restart the service: `systemctl --user restart jacktrip_client.service`
-- To check connection (if the server is availalbe and accessible through the given IP): `systemctl --user status jacktrip_client.service`
+- Edit the *ping.service* file: `sudo nano /etc/systemd/system/ping.service`
+- Replace the IP (server name) and the client box name at the line `ExecStart=sh -c 'mosquitto_pub -h "jacktrip001.local" -t "message" -m "Jacktrip002 is up"` for the new IP address and proper client name.
+- Save the file (Ctrl+O, then hit ENTER in *nano*) and exit (Ctrl+X in *nano*).
+- Update the systemctl daemons: `systemctl --user daemon-reload` and `sudo systemctl daemon-reload`
+- Restart the services: `systemctl --user restart jacktrip_client.service` and `sudo systemctl restart ping.timer`
+- To check connection (if the server is available and accessible through the given IP): `systemctl --user status jacktrip_client.service`

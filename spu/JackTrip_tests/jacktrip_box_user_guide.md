@@ -25,6 +25,6 @@ If you're required to assist in a latency test, connect an audio cable between t
 
 ![Jacktrip latency test assembly](./pics/latency.jpg)
 
-Make sure both the imput gain and the monitor volume are set to the "12 o'clock" position (check the red arrows on the image).
+Make sure both the input gain and the monitor volume are set to the "12 o'clock" position (check the red arrows on the image).
 
 An operator at the JackTrip server will launch the latency test and collect the results.

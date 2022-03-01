@@ -219,6 +219,7 @@ import sys
 
 # Import needed modules from osc4py3
 from osc4py3.as_eventloop import *
+#from osc4py3.as_allthreads import *
 from osc4py3 import oscmethod as osm
 
 # Define GPIO to LCD mapping
@@ -305,8 +306,10 @@ def main():
     lcd_string("Boot Complete", LCD_LINE_3)
     lcd_string("Have Fun!", LCD_LINE_4)
 
+    #while True:
+    #    forever = Event(); forever.wait()
     while True:
-        forever = Event(); forever.wait()
+        osc_process()
 
 def lcd_string(message,pos):
     # Send string to display
@@ -327,8 +330,8 @@ def lcd_init():
 def lcd_byte(bits, mode):
     # Send byte to data pins
     # bits = data
-    # mode = True  for character
-    #        False for command
+    # mode = True  for character
+    #        False for command
 
     GPIO.output(LCD_RS, mode) # RS
 
@@ -672,9 +675,9 @@ To get a list on the computer type **jack** and hit *Tab*
 | jack_samplerate | jack-scope          | jack_server_control        | jack_session_notify | jack_showtime          |
 | jack_thru       | jack_transport      | jack-transport             | jack-udp            | jack_unload            |
 | jack_control    | jack_cpu            | jack_cpu_load              | jackd               | jack_wait              |
-| jack_freewheel  | jack_iodelay        | jack-keyboard              | jack_latent_client  |
-| jack_midiseq    | jack_midisine       | jack_monitor_client        | jack_multiple_metro |
-| jack-plumbing   | jack-rack |jack_rec | jack-record                | jack_test           |
+| jack_freewheel  | jack_iodelay        | jack-keyboard              | jack_latent_client  | jack_midiseq           |
+| jack_midisine   | jack_monitor_client | jack_multiple_metro        | jack-plumbing       |
+| jack-rack       | jack_rec            | jack-record                | jack_test           |
 | jack_simdtests  | jack_simple_client  | jack_simple_session_client | jack_zombie         |
 
 ## Places to replace names in files
@@ -1001,5 +1004,17 @@ systemctl --user daemon-reload
 systemctl --user enable webmapper.service
 ```
 
-systemctl --user start webmapper.service
-systemctl --user status webmapper.service
+## Places to change the SPU name when cloning the SD
+
+- Enter PiSound configuration: `sudo pisound-config`
+  - Change Pisound HotSpot settings:
+    - ssid: `SPU00X` (use SPU's ID)
+- Enter Raspi-Config: `sudo raspi-config`
+  - System options:
+    - Hostname: `SPU00X` (use SPU's ID)
+- `sudo tee /etc/samba/smb.conf`, change all "SPU" references
+
+- SPU00X
+  - SSID hotspot settings: `sudo pisound-config`
+  - Samba config: `sudo nano /etc/samba/smb.conf`
+  - SPU Hostname: `sudo raspi-config`

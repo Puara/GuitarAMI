@@ -27,3 +27,7 @@ The GuitarAMI uses sensors installed non-invasively in classical guitars to gene
 [https://www.edumeneses.com](https://www.edumeneses.com)
 
 [http://www-new.idmil.org/project/guitarami/](http://www-new.idmil.org/project/guitarami/)
+
+## Licensing
+
+The code in this project is licensed under the MIT license, unless otherwise specified within the file.

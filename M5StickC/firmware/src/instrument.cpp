@@ -27,27 +27,27 @@ void Instrument::updateInstrumentIMU (float gyroX, float gyroY, float gyroZ) {
     float gyroAbsZ = std::abs(gyroZ);
     
     // Instrument shake
-    if (gyroAbsX > 0.1) {
-       Instrument::shakeX = leakyIntegrator(gyroAbsX/10, Instrument::shakeX, 0.6, Instrument::leakyShakeFreq, Instrument::leakyShakeTimerX);
+    if (gyroAbsX > shakeThreshold) {
+       Instrument::shakeX = leakyIntegrator(gyroAbsX/maxGyroValue, Instrument::shakeX, 0.6, Instrument::leakyShakeFreq, Instrument::leakyShakeTimerX);
     } else {
         Instrument::shakeX = leakyIntegrator(0, Instrument::shakeX, 0.3, Instrument::leakyShakeFreq, Instrument::leakyShakeTimerX);
-        if (Instrument::shakeX < 0.01) {
+        if (Instrument::shakeX < shakeMinThreshold) {
             Instrument::shakeX = 0;
         }
     }
-    if (gyroAbsY > 0.1) {
-        Instrument::shakeY = leakyIntegrator(gyroAbsY/10, Instrument::shakeY, 0.6, Instrument::leakyShakeFreq, Instrument::leakyShakeTimerY);
+    if (gyroAbsY > shakeThreshold) {
+        Instrument::shakeY = leakyIntegrator(gyroAbsY/maxGyroValue, Instrument::shakeY, 0.6, Instrument::leakyShakeFreq, Instrument::leakyShakeTimerY);
     } else {
         Instrument::shakeY = leakyIntegrator(0, Instrument::shakeY, 0.3, Instrument::leakyShakeFreq, Instrument::leakyShakeTimerY);
-        if (Instrument::shakeY < 0.01) {
+        if (Instrument::shakeY < shakeMinThreshold) {
             Instrument::shakeY = 0;
         }
     }
-    if (gyroAbsZ > 0.1) {
-        Instrument::shakeZ = leakyIntegrator(gyroAbsZ/10, Instrument::shakeZ, 0.6, Instrument::leakyShakeFreq, Instrument::leakyShakeTimerZ);
+    if (gyroAbsZ > shakeThreshold) {
+        Instrument::shakeZ = leakyIntegrator(gyroAbsZ/maxGyroValue, Instrument::shakeZ, 0.6, Instrument::leakyShakeFreq, Instrument::leakyShakeTimerZ);
     } else {
         Instrument::shakeZ = leakyIntegrator(0, Instrument::shakeZ, 0.3, Instrument::leakyShakeFreq, Instrument::leakyShakeTimerZ);
-        if (Instrument::shakeZ < 0.01) {
+        if (Instrument::shakeZ < shakeMinThreshold) {
             Instrument::shakeZ = 0;
         }
     }

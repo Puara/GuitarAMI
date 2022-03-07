@@ -22,6 +22,9 @@ https://github.com/mathiasbredholt/libmapper-arduino/issues/3
 
 const unsigned int firmware_version = 220301;
 
+// Turn everything related to MIDI off
+#define DISABLE_MIDI
+
 
 //////////////
 // Includes //
@@ -125,6 +128,37 @@ double pi = 3.141592653589793238462643383279502884;
   void sendInfo(OSCMessage &msg);
   void receiveOSC();
 
+//////////////////////////////////////////
+// Include MIDI libraries and functions //
+//////////////////////////////////////////
+
+  #ifndef DISABLE_MIDI
+
+  #include "midi.h"
+
+  Midi midi;
+
+  struct MidiReady {
+    unsigned int AccelX; // CC 021 (0b00010101) (for X-axis accelerometer)
+    unsigned int AccelZ; // CC 023 (0b00010111) (for Z-axis accelerometer)
+    unsigned int AccelY; // CC 022 (0b00010110) (for Y-axis accelerometer)
+    unsigned int GyroX;  // CC 024 (0b00011000) (for X-axis gyroscope)
+    unsigned int GyroY;  // CC 025 (0b00011001) (for Y-axis gyroscope)
+    unsigned int GyroZ;  // CC 026 (0b00011010) (for Z-axis gyroscope)
+    unsigned int Yaw;    // CC 027 (0b00011011) (for yaw)
+    unsigned int Pitch;  // CC 028 (0b00011100) (for pitch)
+    unsigned int Roll;   // CC 029 (0b00011101) (for roll)
+    unsigned int ShakeX;
+    unsigned int ShakeY;
+    unsigned int ShakeZ;
+    unsigned int JabX;
+    unsigned int JabY;
+    unsigned int JabZ;
+    unsigned int ButtonA;
+    unsigned int ButtonB;
+  } midiReady;
+
+  #endif
 
 ///////////////////
 // Battery stuff //
@@ -142,16 +176,6 @@ double pi = 3.141592653589793238462643383279502884;
 
   void readBattery();
   void batteryFilter();
-
-
-///////////////////////////////////
-// Include button function files //
-///////////////////////////////////
-
-  #include "buttonGuitarAMI.h"
-
-  ButtonGuitarAMI buttonA;
-  ButtonGuitarAMI buttonB;
 
 
 //////////////////////////////////////////////
@@ -190,11 +214,13 @@ void setup() {
   // Initialize the M5StickC
     M5.begin();
     M5.IMU.Init();  //Init IMU
-    M5.Lcd.setTextColor(YELLOW);  // Set the font color to yellow
+    M5.Lcd.setTextColor(ORANGE);  // Set the font color to yellow
     M5.Lcd.setRotation(3);
-    M5.Lcd.println("GuitarAMI - M5StickC module"); // The screen prints the formatted string and wraps the line
-    M5.Lcd.println("test line 2");
-    M5.Lcd.setTextColor(RED);
+    M5.Lcd.setTextSize(2);
+    M5.Lcd.printf("GuitarAMI\n"
+                  "M5StickC\n"
+                  "module %03i\n"
+                  "Booting...\n",settings.id);
 
   // Start FS and check Json file (config.json)
     module.mountFS();
@@ -247,6 +273,17 @@ void setup() {
           "- 'r' to reboot\n"
           //"- 'd' to enter deep sleep\n\n");
           "\n");
+  
+  M5.Lcd.fillScreen(BLACK);
+  M5.Lcd.setCursor(0,0);
+  M5.Lcd.setTextSize(2);
+  M5.Lcd.printf("Done!\n\n");
+  M5.Lcd.setTextSize(3);
+  M5.Lcd.printf("Have\n"); M5.Lcd.printf("Fun!\n");
+  delay(2000);
+  M5.Lcd.fillScreen(BLACK);
+  M5.Axp.SetLDO2(false); // close tft voltage output
+  M5.Axp.SetLDO3(false); // close tft lcd voltage output
 
 } // end Setup
 
@@ -321,9 +358,7 @@ void loop() {
     //m5imu.gyroYrad = m5imu.gyroY * pi / 180;
     //m5imu.gyroZrad = m5imu.gyroZ * pi / 180;
 
-  // Get High-level descriptors (instrument data) - jab, shake, and buttons for now
-    buttonA.readButton(M5.BtnA.isPressed());
-    buttonB.readButton(M5.BtnB.isPressed());
+  // Get High-level descriptors (instrument data) - jab and shake for now
     instrument.updateInstrumentIMU(m5imu.gyroX, m5imu.gyroY, m5imu.gyroZ);
 
   // send data via OSC
@@ -336,45 +371,21 @@ void loop() {
               sendContinuousOSC(settings.oscIP[1], settings.oscPORT[1]);
             }
           // send discrete (button/battery) data (only when it changes) or != 0
-            if (global.lastCount != buttonA.getCount()) {
-              sendOSC(settings.oscIP[0], settings.oscPORT[0], "instrument/buttonA/count", buttonA.getCount());
-              sendOSC(settings.oscIP[1], settings.oscPORT[1], "instrument/buttonA/count", buttonA.getCount());
-              global.lastCount = buttonA.getCount();
-            } 
-            if (global.lastTap != buttonA.getTap()) {
-              sendOSC(settings.oscIP[0], settings.oscPORT[0], "instrument/button/tap", buttonA.getTap());
-              sendOSC(settings.oscIP[1], settings.oscPORT[1], "instrument/button/tap",  buttonA.getTap());
-              global.lastTap = buttonA.getTap();
+            if (m5.BtnA.wasPressed() == 1) {
+              sendOSC(settings.oscIP[0], settings.oscPORT[0], "instrument/buttonA", 1);
+              sendOSC(settings.oscIP[1], settings.oscPORT[1], "instrument/buttonA", 1);
+              //global.lastCount = buttonA.getCount();
+            } else if (m5.BtnA.wasReleased() == 1) {
+              sendOSC(settings.oscIP[0], settings.oscPORT[0], "instrument/buttonA", 0);
+              sendOSC(settings.oscIP[1], settings.oscPORT[1], "instrument/buttonA", 0);
             }
-            if (global.lastDtap != buttonA.getDTap()) {
-              sendOSC(settings.oscIP[0], settings.oscPORT[0], "instrument/button/dtap",  buttonA.getDTap());
-              sendOSC(settings.oscIP[1], settings.oscPORT[1], "instrument/button/dtap",  buttonA.getDTap());
-              global.lastDtap = buttonA.getDTap();
-            }
-            if (global.lastTtap != buttonA.getTTap()) {
-              sendOSC(settings.oscIP[0], settings.oscPORT[0], "instrument/button/ttap",  buttonA.getTTap());
-              sendOSC(settings.oscIP[1], settings.oscPORT[1], "instrument/button/ttap",  buttonA.getTTap());
-              global.lastTtap = buttonA.getTTap();
-            }
-            if (global.lastCount != buttonB.getCount()) {
-              sendOSC(settings.oscIP[0], settings.oscPORT[0], "instrument/buttonA/count", buttonB.getCount());
-              sendOSC(settings.oscIP[1], settings.oscPORT[1], "instrument/buttonA/count", buttonB.getCount());
-              global.lastCount = buttonB.getCount();
-            } 
-            if (global.lastTap != buttonB.getTap()) {
-              sendOSC(settings.oscIP[0], settings.oscPORT[0], "instrument/button/tap", buttonB.getTap());
-              sendOSC(settings.oscIP[1], settings.oscPORT[1], "instrument/button/tap",  buttonB.getTap());
-              global.lastTap = buttonB.getTap();
-            }
-            if (global.lastDtap != buttonB.getDTap()) {
-              sendOSC(settings.oscIP[0], settings.oscPORT[0], "instrument/button/dtap",  buttonB.getDTap());
-              sendOSC(settings.oscIP[1], settings.oscPORT[1], "instrument/button/dtap",  buttonB.getDTap());
-              global.lastDtap = buttonB.getDTap();
-            }
-            if (global.lastTtap != buttonB.getTTap()) {
-              sendOSC(settings.oscIP[0], settings.oscPORT[0], "instrument/button/ttap",  buttonB.getTTap());
-              sendOSC(settings.oscIP[1], settings.oscPORT[1], "instrument/button/ttap",  buttonB.getTTap());
-              global.lastTtap = buttonB.getTTap();
+            if (m5.BtnB.wasPressed() == 1) {
+              sendOSC(settings.oscIP[0], settings.oscPORT[0], "instrument/buttonB", 1);
+              sendOSC(settings.oscIP[1], settings.oscPORT[1], "instrument/buttonB", 1);
+              //global.lastCount = buttonA.getCount();
+            } else if (m5.BtnB.wasReleased() == 1) {
+              sendOSC(settings.oscIP[0], settings.oscPORT[0], "instrument/buttonB", 0);
+              sendOSC(settings.oscIP[1], settings.oscPORT[1], "instrument/buttonB", 0);
             }
             if (global.lastJab[0] != instrument.getJabX() || global.lastJab[1] != instrument.getJabY() || global.lastJab[2] != instrument.getJabZ()) {
               sendTrioOSC(settings.oscIP[0], settings.oscPORT[0], "instrument/jabxyz", instrument.getJabX(), instrument.getJabY(), instrument.getJabZ());
@@ -398,11 +409,43 @@ void loop() {
       //receiveOSC();
 
   // Check if setup mode has been called
-    if (buttonB.getHold()) {
+    if (m5.BtnB.pressedFor(4000)) {
       printf("\nLong button B press, entering setup mode\n");
+      M5.Axp.SetLDO2(true);
+      M5.Axp.SetLDO3(true);
+      M5.Lcd.fillScreen(BLACK);
+      M5.Lcd.setCursor(0,0);
+      M5.Lcd.setTextSize(2);
+      M5.Lcd.printf("Entering\nsetup\nmode...");
       settings.mode = 1;
       saveJSON();
       global.rebootFlag = true;
+    }
+
+  // LCD indicator ON/OFF
+    if (m5.BtnB.wasPressed()) {
+      M5.Axp.SetLDO2(true);
+      M5.Axp.SetLDO3(true);
+      M5.Lcd.fillScreen(BLACK);
+      M5.Lcd.setCursor(0,0);
+      M5.Lcd.setTextSize(1);
+      M5.Lcd.printf("%s\n\n", global.deviceName);
+      M5.Lcd.setTextSize(3);
+      M5.Lcd.printf("Bat: %u%%\n", battery.percentage);
+      M5.Lcd.setTextSize(1);
+      M5.Lcd.printf("V: %f v\n\n", battery.value);
+      if (!settings.mode) {
+        M5.Lcd.printf("OSC | IP: ");
+        M5.Lcd.println(WiFi.localIP().toString());
+      } else {
+        M5.Lcd.printf("Setup | IP: ");
+        M5.Lcd.println(WiFi.localIP().toString());
+        M5.Lcd.println("            192.168.4.1");
+      }
+    } else if (m5.BtnB.wasReleased()) {
+      M5.Lcd.fillScreen(BLACK);
+      M5.Axp.SetLDO2(false);
+      M5.Axp.SetLDO3(false);
     }
 
   // Checking for timed reboot (called by setup mode) - reboots after 2 seconds
@@ -534,8 +577,8 @@ void saveJSON() { // Serializing
 
   // read battery level (based on https://www.youtube.com/watch?v=yZjpYmWVLh8&feature=youtu.be&t=88) 
   void readBattery() {
-    battery.value = M5.Axp.GetVbatData();
-    battery.percentage = static_cast<int>((battery.value - 2.9) * 100 / (4.15 - 2.9));
+    battery.value = M5.Axp.GetVbatData() * 0.001;
+    battery.percentage = static_cast<int>((battery.value - 3.0) * 100 / (3.8 - 3.0));
     if (battery.percentage > 100)
       battery.percentage = 100;
     if (battery.percentage < 0)
@@ -933,18 +976,6 @@ void start_mdns_service() {
           msgEuler.add(m5imu.roll);
           continuous.add(msgEuler);
           msgEuler.empty(); 
-
-        snprintf(namespaceBuffer,(sizeof(namespaceBuffer)-1),"/%s/buttonA",global.deviceName);
-        OSCMessage msgBtnA(namespaceBuffer);
-          msgBtnA.add(buttonA.getState());
-          continuous.add(msgBtnA);
-          msgBtnA.empty();
-        
-        snprintf(namespaceBuffer,(sizeof(namespaceBuffer)-1),"/%s/buttonB",global.deviceName);
-        OSCMessage msgBtnB(namespaceBuffer);
-          msgBtnB.add(buttonB.getState());
-          continuous.add(msgBtnB);
-          msgBtnB.empty();
 
         oscEndpoint.beginPacket(oscIP,port);
         continuous.send(oscEndpoint);

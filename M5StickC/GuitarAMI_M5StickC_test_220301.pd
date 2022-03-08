@@ -1,37 +1,138 @@
-#N canvas 0 96 1920 984 10;
-#X obj 30 448 vsl 45 135 -2 2 0 0 empty empty AccelX 0 -9 0 10 -262144
--1 -1 15056 1;
-#X obj 80 448 vsl 45 135 -2 2 0 0 empty empty AccelY 0 -9 0 10 -262144
--1 -1 10228 1;
-#X obj 130 448 vsl 45 135 -2 2 0 0 empty empty AccelZ 0 -9 0 10 -262144
--1 -1 19146 1;
-#X obj 180 448 vsl 45 135 -2000 2000 0 0 empty empty GyroX 0 -9 0 10
--262144 -1 -1 13340 1;
-#X obj 230 448 vsl 45 135 -2000 2000 0 0 empty empty GyroY 0 -9 0 10
--262144 -1 -1 13274 1;
-#X obj 280 448 vsl 45 135 -2000 2000 0 0 empty empty GyroZ 0 -9 0 10
--262144 -1 -1 13494 1;
+#N canvas 263 717 1507 974 10;
+#X obj 380 287 cnv 15 553 283 empty empty empty 20 12 0 14 -1 -66577
+0;
+#X obj 377 284 cnv 15 550 280 empty empty INSTRUMENT 20 12 0 14 -228856
+-66577 0;
+#X text 19 604 Extra info:;
+#X text 26 621 - battery last around 30 min in OSC mode;
+#X obj 17 582 cnv 15 1250 350 empty empty empty 20 12 0 14 -1 -66577
+0;
+#X obj 12 577 cnv 15 1250 350 empty empty MIDI 20 12 0 14 -228856 -66577
+0;
+#X floatatom 34 652 0 0 0 0 - - -;
+#X text 62 653 value;
+#X obj 34 622 ctlin 20 1;
+#X floatatom 34 712 0 0 0 0 - - -;
+#X text 62 713 value;
+#X obj 34 682 ctlin 21 1;
+#X floatatom 34 772 0 0 0 0 - - -;
+#X text 62 773 value;
+#X floatatom 34 832 0 0 0 0 - - -;
+#X text 62 833 value;
+#X obj 34 742 ctlin 22 1;
+#X obj 34 802 ctlin 23 1;
+#X floatatom 34 892 0 0 0 0 - - -;
+#X text 62 893 value;
+#X obj 34 862 ctlin 24 1;
+#X text 111 619 Ultrasonic sensor;
+#X text 110 636 (scaled from 0 to 300 mm);
+#X text 111 679 Absolute X-axis acceleration;
+#X text 110 696 (scaled from 0 to 50 m/s^2);
+#X text 112 739 Absolute Y-axis acceleration;
+#X text 110 755 (scaled from 0 to 50 m/s^2);
+#X text 111 800 Absolute Z-axis acceleration;
+#X text 110 815 (scaled from 0 to 50 m/s^2);
+#X text 111 859 Absolute X-axis angular velocity (gyroscope);
+#X text 110 875 (scaled from 0 to 25 rad/s);
+#X floatatom 427 652 0 0 0 0 - - -;
+#X text 455 653 value;
+#X floatatom 427 712 0 0 0 0 - - -;
+#X text 455 713 value;
+#X floatatom 427 772 0 0 0 0 - - -;
+#X text 455 773 value;
+#X floatatom 427 832 0 0 0 0 - - -;
+#X text 455 833 value;
+#X floatatom 427 892 0 0 0 0 - - -;
+#X text 455 893 value;
+#X obj 427 622 ctlin 25 1;
+#X obj 427 682 ctlin 26 1;
+#X obj 427 742 ctlin 27 1;
+#X obj 427 802 ctlin 28 1;
+#X obj 427 862 ctlin 29 1;
+#X text 504 619 Absolute Y-axis angular velocity (gyroscope);
+#X text 503 636 (scaled from 0 to 25 rad/s);
+#X text 504 679 Absolute Z-axis angular velocity (gyroscope);
+#X text 503 696 (scaled from 0 to 25 rad/s);
+#X text 505 739 yaw;
+#X text 504 800 pitch;
+#X text 504 859 roll;
+#X text 503 755 (from -180 to 180 degrees);
+#X text 503 815 (from -180 to 180 degrees);
+#X text 503 875 (from -180 to 180 degrees);
+#X floatatom 821 680 0 0 0 0 - - -;
+#X text 849 681 value;
+#X floatatom 821 732 0 0 0 0 - - -;
+#X text 849 733 value;
+#X floatatom 821 784 0 0 0 0 - - -;
+#X text 849 785 value;
+#X floatatom 821 836 0 0 0 0 - - -;
+#X text 849 837 value;
+#X obj 821 654 ctlin 30 1;
+#X obj 821 706 ctlin 31 1;
+#X obj 821 758 ctlin 14 1;
+#X obj 821 810 ctlin 15 1;
+#X text 898 651 tap [0 or 127];
+#X text 898 703 double tap [0 or 127];
+#X text 899 755 triple tap [0 or 127];
+#X text 898 808 touch count starting from 0;
+#X floatatom 1097 652 0 0 0 0 - - -;
+#X text 1125 653 value;
+#X floatatom 1097 712 0 0 0 0 - - -;
+#X text 1125 713 value;
+#X floatatom 1097 772 0 0 0 0 - - -;
+#X text 1125 773 value;
+#X floatatom 1097 832 0 0 0 0 - - -;
+#X text 1125 833 value;
+#X floatatom 1097 892 0 0 0 0 - - -;
+#X text 1125 893 value;
+#X floatatom 821 892 0 0 0 0 - - -;
+#X text 849 893 value;
+#X obj 821 867 ctlin 85 1;
+#X obj 1097 622 ctlin 86 1;
+#X obj 1097 682 ctlin 87 1;
+#X text 898 864 Shake X;
+#X text 897 879 comment;
+#X text 1174 619 Shake Y;
+#X text 1174 679 Shake Z;
+#X text 1184 741 Jab X;
+#X text 1183 802 Jab Y;
+#X text 1183 861 Jab Z;
+#X obj 1097 742 ctlin 102 1;
+#X obj 1097 802 ctlin 103 1;
+#X obj 1097 862 ctlin 104 1;
+#X floatatom 821 628 0 0 0 0 - - -;
+#X text 849 629 value;
+#X obj 821 602 ctlin 89 1;
+#X text 898 599 Ultrasonic trig [0 or 127];
+#X obj 18 355 cnv 15 333 217 empty empty empty 20 12 0 14 -1 -66577
+0;
+#X obj 16 351 cnv 15 330 215 empty empty RAW 20 12 0 14 -228856 -66577
+0;
+#X obj 30 388 vsl 45 135 -2 2 0 0 empty empty AccelX 0 -9 0 10 -262144
+-1 -1 0 1;
+#X obj 80 388 vsl 45 135 -2 2 0 0 empty empty AccelY 0 -9 0 10 -262144
+-1 -1 0 1;
+#X obj 130 388 vsl 45 135 -2 2 0 0 empty empty AccelZ 0 -9 0 10 -262144
+-1 -1 0 1;
+#X obj 180 388 vsl 45 135 -2000 2000 0 0 empty empty GyroX 0 -9 0 10
+-262144 -1 -1 0 1;
+#X obj 230 388 vsl 45 135 -2000 2000 0 0 empty empty GyroY 0 -9 0 10
+-262144 -1 -1 0 1;
+#X obj 280 388 vsl 45 135 -2000 2000 0 0 empty empty GyroZ 0 -9 0 10
+-262144 -1 -1 0 1;
 #X obj 617 132 timer;
 #X floatatom 617 156 8 0 0 0 - - -;
 #X obj 617 107 t b b;
 #X obj 617 82 r rawtimer;
 #N canvas 0 22 450 278 (subpatch) 0;
 #X array rawtime 100 float 1;
-#A 0 1.45125 8.70748 1.45125 8.70748 1.45125 8.70748 1.45125 8.70748
-1.45125 7.25624 1.45125 1.45125 14.5125 1.45125 5.80499 4.35374 10.1587
-1.45125 10.1587 5.80499 5.80499 5.80499 4.35374 5.80499 5.80499 4.35374
-8.70748 1.45125 8.70748 1.45125 8.70748 1.45125 1.45125 10.1587 5.80499
-4.35374 5.80499 8.70748 1.45125 10.1587 1.45125 8.70748 1.45125 10.1587
-2.90249 1.45125 5.80499 14.5125 1.45125 4.35374 4.35374 1.45125 8.70748
-1.45125 8.70748 1.45125 10.1587 5.80499 4.35374 5.80499 8.70748 1.45125
-8.70748 1.45125 11.61 2.90249 7.25624 4.35374 4.35374 1.45125 5.80499
-4.35374 5.80499 10.1587 5.80499 4.35374 5.80499 4.35374 5.80499 8.70748
-1.45125 8.70748 1.45125 8.70748 1.45125 8.70748 1.45125 10.1587 1.45125
-4.35374 5.80499 2.90249 7.25624 2.90249 1.45125 1.45125 5.80499 1.45125
-1.45125 1.45125;
+#A 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0
+0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0
+0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0
+0;
 #X coords 0 100 99 0 200 140 1;
 #X restore 411 79 graph;
-#N canvas 264 335 568 475 timegraph 0;
+#N canvas 254 685 568 475 timegraph 0;
 #X obj 111 257 list store;
 #X obj 117 300 list split 100;
 #X msg 148 105 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0
@@ -54,127 +155,236 @@
 #X connect 6 0 2 0;
 #X restore 617 180 pd timegraph;
 #X obj 617 204 array set rawtime;
-#X floatatom 130 591 7 0 0 0 - - -;
-#X floatatom 180 591 7 0 0 0 - - -;
-#X floatatom 230 591 7 0 0 0 - - -;
-#X floatatom 280 591 7 0 0 0 - - -;
-#X floatatom 80 591 7 0 0 0 - - -;
-#X floatatom 30 591 7 0 0 0 - - -;
+#X floatatom 130 531 7 0 0 0 - - -;
+#X floatatom 180 531 7 0 0 0 - - -;
+#X floatatom 230 531 7 0 0 0 - - -;
+#X floatatom 280 531 7 0 0 0 - - -;
+#X floatatom 80 531 7 0 0 0 - - -;
+#X floatatom 30 531 7 0 0 0 - - -;
 #X obj 97 149 netreceive -u -b;
 #X obj 97 170 oscparse;
 #X msg 97 126 listen \$1;
-#X obj 30 378 unpack f f f;
-#X obj 115 378 unpack f f f;
+#X obj 30 318 unpack f f f;
+#X obj 115 318 unpack f f f;
 #X obj 27 170 s rawtimer;
 #X obj 97 193 route list;
 #X obj 70 50 tgl 20 0 empty empty Receive_OSC_messages 22 8 0 10 -262144
 -1 -1 1 1;
 #X obj 70 78 sel 1;
-#X floatatom 638 458 10 0 0 0 - - -;
-#X floatatom 704 458 10 0 0 0 - - -;
-#X floatatom 772 458 10 0 0 0 - - -;
-#X obj 674 434 unpack f f f;
-#X floatatom 302 276 4 0 0 1 % - -;
-#X text 697 411 YPR;
-#X text 312 338 Instrument;
-#X obj 350 421 vsl 35 135 0 100 0 0 empty empty ShakeX 0 -9 0 10 -262144
+#X floatatom 698 425 10 0 0 0 - - -;
+#X floatatom 764 425 10 0 0 0 - - -;
+#X floatatom 832 425 10 0 0 0 - - -;
+#X obj 734 401 unpack f f f;
+#X floatatom 224 311 4 0 0 1 % - -;
+#X text 757 378 YPR;
+#X obj 410 388 vsl 35 135 0 100 0 0 empty empty ShakeX 0 -9 0 10 -262144
 -1 -1 0 1;
-#X floatatom 350 564 6 0 0 0 - - -;
-#X obj 392 421 vsl 35 135 0 100 0 0 empty empty ShakeY 0 -9 0 10 -262144
--1 -1 4 1;
-#X floatatom 392 564 6 0 0 0 - - -;
-#X obj 435 421 vsl 35 135 0 100 0 0 empty empty ShakeZ 0 -9 0 10 -262144
+#X floatatom 410 531 6 0 0 0 - - -;
+#X obj 452 388 vsl 35 135 0 100 0 0 empty empty ShakeY 0 -9 0 10 -262144
 -1 -1 0 1;
-#X floatatom 435 564 6 0 0 0 - - -;
-#X obj 375 377 unpack f f f;
-#X obj 476 421 vsl 35 135 -2000 2000 0 0 empty empty JabX 0 -9 0 10
--262144 -1 -1 15486 1;
-#X floatatom 476 564 6 0 0 0 - - -;
-#X obj 518 421 vsl 35 135 -2000 2000 0 0 empty empty JabY 0 -9 0 10
--262144 -1 -1 14238 1;
-#X floatatom 518 564 6 0 0 0 - - -;
-#X obj 561 421 vsl 35 135 -2000 2000 0 0 empty empty JabZ 0 -9 0 10
--262144 -1 -1 12728 1;
-#X floatatom 561 564 6 0 0 0 - - -;
-#X obj 455 377 unpack f f f;
+#X floatatom 452 531 6 0 0 0 - - -;
+#X obj 495 388 vsl 35 135 0 100 0 0 empty empty ShakeZ 0 -9 0 10 -262144
+-1 -1 0 1;
+#X floatatom 495 531 6 0 0 0 - - -;
+#X obj 435 344 unpack f f f;
+#X obj 536 388 vsl 35 135 -2000 2000 0 0 empty empty JabX 0 -9 0 10
+-262144 -1 -1 0 1;
+#X floatatom 536 531 6 0 0 0 - - -;
+#X obj 578 388 vsl 35 135 -2000 2000 0 0 empty empty JabY 0 -9 0 10
+-262144 -1 -1 0 1;
+#X floatatom 578 531 6 0 0 0 - - -;
+#X obj 621 388 vsl 35 135 -2000 2000 0 0 empty empty JabZ 0 -9 0 10
+-262144 -1 -1 0 1;
+#X floatatom 621 531 6 0 0 0 - - -;
+#X obj 515 344 unpack f f f;
 #X obj 70 20 loadbang;
 #X msg 60 100 8000;
 #X text 273 10 GuitarAMI M5StickC FW220301;
 #X text 273 27 Edu Meneses - IDMIL - Mar/2022;
 #X text 240 218 Change module NAME!;
-#X floatatom 597 370 5 0 0 3 buttonA - -;
-#X floatatom 647 370 5 0 0 3 buttonB - -;
-#X obj 71 345 route accl gyro, f 16;
-#X obj 385 337 route shakexyz jabxyz ypr buttonA buttonB;
-#X obj 97 246 route raw instrument battery;
-#X obj 638 495 vsl 35 64 -180 180 0 0 empty empty Yall 0 -9 0 10 -262144
+#X floatatom 657 337 5 0 0 3 buttonA - -;
+#X floatatom 707 337 5 0 0 3 buttonB - -;
+#X obj 71 285 route accl gyro, f 16;
+#X obj 445 304 route shakexyz jabxyz ypr buttonA buttonB;
+#X obj 698 462 vsl 35 64 -180 180 0 0 empty empty Yall 0 -9 0 10 -262144
 -1 -1 0 1;
-#X floatatom 638 568 6 0 0 0 - - -;
-#X obj 704 495 vsl 35 64 -180 180 0 0 empty empty Pitch 0 -9 0 10 -262144
--1 -1 5692 1;
-#X floatatom 704 568 6 0 0 0 - - -;
-#X obj 773 495 vsl 35 64 -180 180 0 0 empty empty Roll 0 -9 0 10 -262144
--1 -1 4998 1;
-#X floatatom 773 568 6 0 0 0 - - -;
-#X obj 97 218 route GuitarAMI_m5_003;
-#X connect 0 0 18 0;
-#X connect 1 0 17 0;
-#X connect 2 0 13 0;
-#X connect 3 0 14 0;
-#X connect 4 0 15 0;
-#X connect 5 0 16 0;
-#X connect 6 0 7 0;
-#X connect 7 0 11 0;
+#X floatatom 698 535 6 0 0 0 - - -;
+#X obj 764 462 vsl 35 64 -180 180 0 0 empty empty Pitch 0 -9 0 10 -262144
+-1 -1 0 1;
+#X floatatom 764 535 6 0 0 0 - - -;
+#X obj 833 462 vsl 35 64 -180 180 0 0 empty empty Roll 0 -9 0 10 -262144
+-1 -1 0 1;
+#X floatatom 833 535 6 0 0 0 - - -;
+#X obj 97 218 route GuitarAMI_m5_001;
+#N canvas 964 898 590 464 msg_recorder 0;
+#X obj 122 110 realtime;
+#X obj 434 42 inlet;
+#X obj 332 41 inlet;
+#X text 314 20 start / stop;
+#X obj 124 42 inlet;
+#X text 121 20 message;
+#X text 407 20 save frequency;
+#X obj 316 146 metro 5000;
+#X obj 124 65 t a b;
+#X obj 53 180 list prepend;
+#X obj 122 135 / 1000;
+#X text 127 152 convert ms to s;
+#X obj 137 396 textfile;
+#X obj 53 202 list prepend add;
+#X obj 53 225 list trim;
+#X msg 316 172 write msg_recorder.txt;
+#X msg 333 378 clear;
+#X obj 222 44 inlet;
+#X text 194 23 store frequency;
+#X obj 42 331 spigot 0;
+#X msg 99 286 1;
+#X obj 53 253 t b a;
+#X msg 68 286 0;
+#X obj 99 263 metro 1000;
+#X obj 269 325 bng 15 250 50 0 empty empty empty 17 7 0 10 -262144
+-1 -1;
+#X obj 269 345 t b b;
+#X msg 195 378 add beginning of file;
+#X text 288 324 clear file;
+#X obj 122 91 bng 15 250 50 0 empty empty empty 17 7 0 10 -262144 -1
+-1;
+#X obj 527 73 inlet;
+#X text 527 49 reset;
+#X connect 0 0 10 0;
+#X connect 1 0 7 1;
+#X connect 2 0 7 0;
+#X connect 2 0 23 0;
+#X connect 4 0 8 0;
+#X connect 7 0 15 0;
+#X connect 8 0 9 0;
+#X connect 8 1 0 1;
+#X connect 9 0 13 0;
+#X connect 10 0 9 1;
+#X connect 13 0 14 0;
+#X connect 14 0 21 0;
+#X connect 15 0 12 0;
+#X connect 16 0 12 0;
+#X connect 17 0 23 1;
+#X connect 19 0 12 0;
+#X connect 20 0 19 1;
+#X connect 21 0 22 0;
+#X connect 21 1 19 0;
+#X connect 22 0 19 1;
+#X connect 23 0 20 0;
+#X connect 24 0 25 0;
+#X connect 25 0 26 0;
+#X connect 25 1 16 0;
+#X connect 26 0 12 0;
+#X connect 28 0 0 0;
+#X connect 29 0 24 0;
+#X connect 29 0 28 0;
+#X restore 448 248 pd msg_recorder;
+#X obj 491 225 tgl 15 0 empty empty empty 17 7 0 10 -262144 -1 -1 0
+1;
+#X obj 535 224 bng 15 250 50 0 empty empty empty 17 7 0 10 -262144
+-1 -1;
+#X obj 97 246 route raw instrument battery vbattery;
+#X floatatom 224 289 10 0 0 0 - - -;
+#X text 223 271 Battery;
+#N canvas 2458 1484 450 300 make_list 0;
+#X obj 31 17 inlet;
+#X obj 95 19 inlet;
+#X obj 27 64 list prepend battery volt;
+#X obj 85 124 list append;
+#X obj 85 147 outlet;
+#X obj 193 65 list prepend percent;
+#X connect 0 0 2 0;
+#X connect 1 0 5 0;
+#X connect 2 0 3 0;
+#X connect 3 0 4 0;
+#X connect 5 0 3 1;
+#X restore 1100 69 pd make_list;
+#X text 371 305;
 #X connect 8 0 6 0;
-#X connect 8 1 6 1;
-#X connect 9 0 8 0;
-#X connect 11 0 12 0;
-#X connect 19 0 20 0;
-#X connect 19 0 24 0;
-#X connect 20 0 25 0;
-#X connect 21 0 19 0;
-#X connect 22 0 0 0;
-#X connect 22 1 1 0;
-#X connect 22 2 2 0;
-#X connect 23 0 3 0;
-#X connect 23 1 4 0;
-#X connect 23 2 5 0;
-#X connect 25 0 65 0;
-#X connect 26 0 27 0;
-#X connect 27 0 50 0;
-#X connect 27 1 21 0;
-#X connect 28 0 59 0;
-#X connect 29 0 61 0;
-#X connect 30 0 63 0;
-#X connect 31 0 28 0;
-#X connect 31 1 29 0;
-#X connect 31 2 30 0;
-#X connect 35 0 36 0;
-#X connect 37 0 38 0;
-#X connect 39 0 40 0;
-#X connect 41 0 35 0;
-#X connect 41 1 37 0;
-#X connect 41 2 39 0;
-#X connect 42 0 43 0;
-#X connect 44 0 45 0;
-#X connect 46 0 47 0;
-#X connect 48 0 42 0;
-#X connect 48 1 44 0;
-#X connect 48 2 46 0;
-#X connect 49 0 26 0;
-#X connect 50 0 21 0;
-#X connect 56 0 22 0;
-#X connect 56 1 23 0;
-#X connect 57 0 41 0;
-#X connect 57 1 48 0;
-#X connect 57 2 31 0;
-#X connect 57 3 54 0;
-#X connect 57 4 55 0;
-#X connect 58 0 56 0;
-#X connect 58 1 57 0;
-#X connect 58 2 32 0;
-#X connect 59 0 60 0;
-#X connect 61 0 62 0;
-#X connect 63 0 64 0;
+#X connect 11 0 9 0;
+#X connect 16 0 12 0;
+#X connect 17 0 14 0;
+#X connect 20 0 18 0;
+#X connect 41 0 31 0;
+#X connect 42 0 33 0;
+#X connect 43 0 35 0;
+#X connect 44 0 37 0;
+#X connect 45 0 39 0;
+#X connect 64 0 56 0;
 #X connect 65 0 58 0;
+#X connect 66 0 60 0;
+#X connect 67 0 62 0;
+#X connect 84 0 82 0;
+#X connect 85 0 72 0;
+#X connect 86 0 74 0;
+#X connect 94 0 76 0;
+#X connect 95 0 78 0;
+#X connect 96 0 80 0;
+#X connect 99 0 97 0;
+#X connect 103 0 121 0;
+#X connect 104 0 120 0;
+#X connect 105 0 116 0;
+#X connect 106 0 117 0;
+#X connect 107 0 118 0;
+#X connect 108 0 119 0;
+#X connect 109 0 110 0;
+#X connect 110 0 114 0;
+#X connect 111 0 109 0;
+#X connect 111 1 109 1;
+#X connect 112 0 111 0;
+#X connect 114 0 115 0;
+#X connect 122 0 123 0;
+#X connect 122 0 127 0;
+#X connect 123 0 128 0;
+#X connect 124 0 122 0;
+#X connect 125 0 103 0;
+#X connect 125 1 104 0;
+#X connect 125 2 105 0;
+#X connect 126 0 106 0;
+#X connect 126 1 107 0;
+#X connect 126 2 108 0;
+#X connect 128 0 166 0;
+#X connect 129 0 130 0;
+#X connect 130 0 152 0;
+#X connect 130 1 124 0;
+#X connect 131 0 160 0;
+#X connect 132 0 162 0;
+#X connect 133 0 164 0;
+#X connect 134 0 131 0;
+#X connect 134 1 132 0;
+#X connect 134 2 133 0;
+#X connect 135 0 173 1;
+#X connect 137 0 138 0;
+#X connect 139 0 140 0;
+#X connect 141 0 142 0;
+#X connect 143 0 137 0;
+#X connect 143 1 139 0;
+#X connect 143 2 141 0;
+#X connect 144 0 145 0;
+#X connect 146 0 147 0;
+#X connect 148 0 149 0;
+#X connect 150 0 144 0;
+#X connect 150 1 146 0;
+#X connect 150 2 148 0;
+#X connect 151 0 129 0;
+#X connect 152 0 124 0;
+#X connect 158 0 125 0;
+#X connect 158 1 126 0;
+#X connect 159 0 143 0;
+#X connect 159 1 150 0;
+#X connect 159 2 134 0;
+#X connect 159 3 156 0;
+#X connect 159 4 157 0;
+#X connect 160 0 161 0;
+#X connect 162 0 163 0;
+#X connect 164 0 165 0;
+#X connect 166 0 170 0;
+#X connect 168 0 167 2;
+#X connect 169 0 167 4;
+#X connect 170 0 158 0;
+#X connect 170 1 159 0;
+#X connect 170 2 135 0;
+#X connect 170 3 171 0;
+#X connect 171 0 173 0;
+#X connect 173 0 167 0;
 #X coords 0 0 1 1 470 216 0;

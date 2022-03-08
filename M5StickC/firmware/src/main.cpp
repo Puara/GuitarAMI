@@ -23,7 +23,7 @@ https://github.com/mathiasbredholt/libmapper-arduino/issues/3
 const unsigned int firmware_version = 220301;
 
 // Turn everything related to MIDI off
-#define DISABLE_MIDI
+//#define DISABLE_MIDI
 
 
 //////////////
@@ -54,6 +54,8 @@ const unsigned int firmware_version = 220301;
     bool rebootFlag = false;
     unsigned long rebootTimer;
     unsigned int oscDelay = 10; // 10ms ~= 100Hz
+    unsigned int midiDelay = 10;
+    unsigned int lcdDelay = 3000;
     unsigned long messageTimer = 0;
     unsigned int lastCount = 1;
     unsigned int lastTap = 1;
@@ -64,8 +66,6 @@ const unsigned int firmware_version = 220301;
     float lastFsr = 1;
     float lastShake[3] = {0.1, 0.1, 0.1};
     float lastJab[3] = {0.1, 0.1, 0.1};
-    int ledValue = 0;
-    uint8_t color = 0;
   } global;
 
 double pi = 3.141592653589793238462643383279502884;
@@ -87,7 +87,7 @@ double pi = 3.141592653589793238462643383279502884;
     int32_t localPORT = 8000;
     bool libmapper = false;
     bool osc = false;
-    int mode = 0; // 0:STA, 1:Setup(STA+AP+WebServer)
+    int mode = 0; // 0:STA, 1:Setup(STA+AP+WebServer), 2:MIDI
   } settings;
 
 
@@ -96,10 +96,10 @@ double pi = 3.141592653589793238462643383279502884;
 ////////////////////////////////////////
 
   struct M5imu {
-    float accX = 0.0F;
+    float accX = 0.0F; // between -1 and 1
     float accY = 0.0F;
     float accZ = 0.0F;
-    float gyroX = 0.0F; // DPS ?
+    float gyroX = 0.0F; // DPS ? - between -2000 and 1984.31 (2000?)
     float gyroY = 0.0F;
     float gyroZ = 0.0F;
     float gyroXrad = 0.0F; // radians per second (if conversion is needed)
@@ -134,28 +134,30 @@ double pi = 3.141592653589793238462643383279502884;
 
   #ifndef DISABLE_MIDI
 
-  #include "midi.h"
+  //#include "midi.h"
+  #include <BLEMidi.h>
 
-  Midi midi;
+  //Midi midi;
 
   struct MidiReady {
-    unsigned int AccelX; // CC 021 (0b00010101) (for X-axis accelerometer)
-    unsigned int AccelZ; // CC 023 (0b00010111) (for Z-axis accelerometer)
-    unsigned int AccelY; // CC 022 (0b00010110) (for Y-axis accelerometer)
-    unsigned int GyroX;  // CC 024 (0b00011000) (for X-axis gyroscope)
-    unsigned int GyroY;  // CC 025 (0b00011001) (for Y-axis gyroscope)
-    unsigned int GyroZ;  // CC 026 (0b00011010) (for Z-axis gyroscope)
-    unsigned int Yaw;    // CC 027 (0b00011011) (for yaw)
-    unsigned int Pitch;  // CC 028 (0b00011100) (for pitch)
-    unsigned int Roll;   // CC 029 (0b00011101) (for roll)
-    unsigned int ShakeX;
-    unsigned int ShakeY;
-    unsigned int ShakeZ;
-    unsigned int JabX;
-    unsigned int JabY;
-    unsigned int JabZ;
-    unsigned int ButtonA;
-    unsigned int ButtonB;
+    unsigned int AccelX;  // CC 21  (0b00010101) (for X-axis accelerometer)
+    unsigned int AccelY;  // CC 22  (0b00010110) (for Y-axis accelerometer)
+    unsigned int AccelZ;  // CC 23  (0b00010111) (for Z-axis accelerometer)
+    unsigned int GyroX;   // CC 24  (0b00011000) (for X-axis gyroscope)
+    unsigned int GyroY;   // CC 25  (0b00011001) (for Y-axis gyroscope)
+    unsigned int GyroZ;   // CC 26  (0b00011010) (for Z-axis gyroscope)
+    unsigned int Yaw;     // CC 27  (0b00011011) (for yaw)
+    unsigned int Pitch;   // CC 28  (0b00011100) (for pitch)
+    unsigned int Roll;    // CC 29  (0b00011101) (for roll)
+    unsigned int ShakeX;  // CC 85  (0b01010101) (for X-axis ShakeX)
+    unsigned int ShakeY;  // CC 86  (0b01010110) (for Y-axis ShakeY)
+    unsigned int ShakeZ;  // CC 87  (0b01010111) (for Z-axis ShakeZ)
+    unsigned int JabX;    // CC 102 (0b01100110) (for X-axis JabX) 
+    unsigned int JabY;    // CC 103 (0b01100111) (for Y-axis JabY) 
+    unsigned int JabZ;    // CC 104 (0b01101000) (for Z-axis JabZ)
+    unsigned int ButtonA; // CC 30  (0b00011110) (for button A)
+    unsigned int ButtonB; // CC 31  (0b00011111) (for button B)
+    unsigned int battery; // CC 105  (0b00011111) (for battery)
   } midiReady;
 
   #endif
@@ -165,7 +167,7 @@ double pi = 3.141592653589793238462643383279502884;
 ///////////////////
   
   struct BatteryData {
-    unsigned int percentage = 0;
+    int percentage = 0;
     unsigned int lastPercentage = 0;
     float value;
     unsigned long timer = 0;
@@ -200,6 +202,8 @@ double pi = 3.141592653589793238462643383279502884;
   String scanProcessor(const String& var);
   String factoryProcessor(const String& var);
   String updateProcessor(const String& var);
+  int mapMIDI(float x, float in_min, float in_max);
+  int mapMIDI(float x, float in_min, float in_max, float out_min, float out_max);
 
 //
 // ┏━┓┏━╸╺┳╸╻ ╻┏━┓
@@ -228,7 +232,7 @@ void setup() {
   // Load Json file stored values
     parseJSON();
     settings.firmware = firmware_version;
-    if (settings.mode < 0 || settings.mode > 1 ){
+    if (settings.mode < 0 || settings.mode > 2){
       settings.mode = 1;
       printf("\nMode error: changing to setup mode for correction\n");
       saveJSON();
@@ -240,7 +244,7 @@ void setup() {
         "module ID: %03i\n"
         "Version %d\n"
         "\n"
-        "Booting System...\n",settings.id,settings.firmware);
+        "Booting System...\n\n",settings.id,settings.firmware);
 
   // Print Json file stored values
     //module.printJSON();
@@ -249,12 +253,14 @@ void setup() {
   // Define this module full name
     snprintf(global.deviceName,(sizeof(global.deviceName)-1),"GuitarAMI_m5_%03i",settings.id);
 
-    module.startWifi(global.deviceName, settings.mode, settings.APpasswd, settings.lastConnectedNetwork, settings.lastStoredPsk);
-
-  // Start listening for incoming OSC messages if WiFi is ON
-    oscEndpoint.begin(settings.localPORT);
-    printf("Starting UDP (listening to OSC messages)\n");
-    printf("Local port: %d\n", settings.localPORT);
+  // Start Wi-Fi stuff
+    if (settings.mode == 0 || settings.mode == 1) {
+      module.startWifi(global.deviceName, settings.mode, settings.APpasswd, settings.lastConnectedNetwork, settings.lastStoredPsk);
+      // Start listening for incoming OSC messages if WiFi is ON
+      oscEndpoint.begin(settings.localPORT);
+      printf("Starting UDP (listening to OSC messages)\n");
+      printf("Local port: %d\n", settings.localPORT);
+    }
 
   // Start dns and web Server if in setup mode
     if (settings.mode == 1) {
@@ -264,8 +270,24 @@ void setup() {
       initWebServer();
     }
 
-  // // Setting Deep sleep wake button
-  //   esp_sleep_enable_ext0_wakeup(GPIO_NUM_15,0); // 1 = High, 0 = Low
+  // Initializing MIDI if in MIDI mode (settings.mode = 2)
+
+    #ifndef DISABLE_MIDI
+      if (settings.mode == 2) {
+        Serial.println("    Initializing BLE MIDI...  \n");
+        //midi.setDeviceName(global.deviceName);
+        BLEMidiServer.begin(global.deviceName);
+        // if (midi.initMIDI()) {
+        //   Serial.print("MIDI mode: Connect to "); Serial.print(global.deviceName); Serial.println(" to start sending BLE MIDI");
+        //   Serial.print("    (channel "); Serial.print(midi.getChannel()); Serial.println(")");
+        // } else {
+        //   Serial.println("BLE MIDI initialization failed!");
+        // }
+      }
+    #endif
+
+  // Setting Deep sleep wake button
+  //     esp_sleep_enable_ext0_wakeup(GPIO_NUM_15,0); // 1 = High, 0 = Low
     
   printf("\n\nBoot complete\n\n"
           "This firmware accepts:\n"
@@ -284,6 +306,7 @@ void setup() {
   M5.Lcd.fillScreen(BLACK);
   M5.Axp.SetLDO2(false); // close tft voltage output
   M5.Axp.SetLDO3(false); // close tft lcd voltage output
+
 
 } // end Setup
 
@@ -361,9 +384,41 @@ void loop() {
   // Get High-level descriptors (instrument data) - jab and shake for now
     instrument.updateInstrumentIMU(m5imu.gyroX, m5imu.gyroY, m5imu.gyroZ);
 
+  // prepare MIDI data if needed
+    #ifndef DISABLE_MIDI
+      if (settings.mode == 2) {
+        midiReady.AccelX = mapMIDI(m5imu.accX, -1, 1);
+        midiReady.AccelZ = mapMIDI(m5imu.accY, -1, 1);
+        midiReady.AccelY = mapMIDI(m5imu.accZ, -1, 1);
+        midiReady.GyroX = mapMIDI(m5imu.gyroX, -2000, 2000);
+        midiReady.GyroY = mapMIDI(m5imu.gyroY, -2000, 2000);
+        midiReady.GyroZ = mapMIDI(m5imu.gyroZ, -2000, 2000);
+        midiReady.Yaw  = mapMIDI(m5imu.yaw, -180, 180);
+        midiReady.Pitch = mapMIDI(m5imu.pitch, -180, 180);
+        midiReady.Roll  = mapMIDI(m5imu.roll, -180, 180);
+        midiReady.ShakeX = mapMIDI(instrument.getShakeX(), 0, 50);
+        midiReady.ShakeY = mapMIDI(instrument.getShakeY(), 0, 50);
+        midiReady.ShakeZ = mapMIDI(instrument.getShakeZ(), 0, 50);
+        midiReady.JabX = mapMIDI(instrument.getJabX(), 0, 3000);
+        midiReady.JabY = mapMIDI(instrument.getJabY(), 0, 3000);
+        midiReady.JabZ = mapMIDI(instrument.getJabZ(), 0, 3000);
+        if (m5.BtnA.wasPressed() == 1) {
+              midiReady.ButtonA = 127;
+        } else if (m5.BtnA.wasReleased() == 1) {
+              midiReady.ButtonA = 0;
+        }
+        if (m5.BtnB.wasPressed() == 1) {
+          midiReady.ButtonB = 1;
+        } else if (m5.BtnB.wasReleased() == 1) {
+          midiReady.ButtonB = 0;
+        }
+        midiReady.battery = battery.percentage;
+      }
+    #endif
+
   // send data via OSC
     if (settings.osc) {
-      if (settings.mode==0 || WiFi.status() == WL_CONNECTED) { // Send data via OSC ...
+      if (settings.mode==0 || settings.mode==1 || WiFi.status() == WL_CONNECTED) { // Send data via OSC ...
           // sending continuous data
             if (millis() - global.oscDelay > global.messageTimer) { 
               global.messageTimer = millis();
@@ -400,7 +455,8 @@ void loop() {
             if (battery.lastPercentage != battery.percentage) {
               sendOSC(settings.oscIP[0], settings.oscPORT[0], "battery", battery.percentage);
               sendOSC(settings.oscIP[1], settings.oscPORT[1], "battery", battery.percentage);
-              battery.lastPercentage = battery.percentage;
+              sendOSC(settings.oscIP[0], settings.oscPORT[0], "vbattery", battery.value);
+              sendOSC(settings.oscIP[1], settings.oscPORT[1], "vbattery", battery.value);
             }
       }
     }
@@ -408,8 +464,94 @@ void loop() {
   // receiving OSC
       //receiveOSC();
 
+  #ifndef DISABLE_MIDI
+    // if (midi.status()) {
+    //   // sending continuous data
+    //   if (millis() - global.midiDelay > global.messageTimer) {
+    //     global.messageTimer = millis();
+    //       midi.CCbundle ( 21, midiReady.AccelX,
+    //                       22, midiReady.AccelY,
+    //                       23, midiReady.AccelZ);
+    //       midi.CCbundle ( 24, midiReady.GyroX, 
+    //                       25, midiReady.GyroY, 
+    //                       26, midiReady.GyroZ);
+    //       midi.CCbundle ( 27, midiReady.Yaw,  
+    //                       28, midiReady.Pitch,
+    //                       29, midiReady.Roll);
+    //   }
+    //   // send discrete data (only when it changes)
+    //   if (m5.BtnA.wasPressed() == 1 || m5.BtnA.wasReleased()) {
+    //     midi.CC(30, midiReady.ButtonA);
+    //   }
+    //   if (m5.BtnB.wasPressed() == 1 || m5.BtnB.wasReleased() == 1) {
+    //     midi.CC(31, midiReady.ButtonB);
+    //   }
+    //   if (global.lastJab[0] != instrument.getJabX() || global.lastJab[1] != instrument.getJabY() || global.lastJab[2] != instrument.getJabZ()) {
+    //     midi.CCbundle ( 102, midiReady.JabX,
+    //                     103, midiReady.JabY,
+    //                     104, midiReady.JabZ);
+    //   }
+    //   if (global.lastShake[0] != instrument.getShakeX() || global.lastShake[1] != instrument.getShakeY() || global.lastShake[2] != instrument.getShakeZ()) {
+    //     midi.CCbundle ( 85, midiReady.ShakeX,
+    //                     86, midiReady.ShakeY,
+    //                     87, midiReady.ShakeZ);
+    //   }
+    //   if (battery.lastPercentage != battery.percentage) {
+    //     midi.CC(105, midiReady.battery);
+    //   }
+    // }
+    if (BLEMidiServer.isConnected()) {
+      // sending continuous data
+      if (millis() - global.midiDelay > global.messageTimer) {
+        global.messageTimer = millis();
+          BLEMidiServer.controlChange(0, 21, midiReady.AccelX);
+          BLEMidiServer.controlChange(0, 22, midiReady.AccelY);
+          BLEMidiServer.controlChange(0, 23, midiReady.AccelZ);
+          BLEMidiServer.controlChange(0, 24, midiReady.GyroX);
+          BLEMidiServer.controlChange(0, 25, midiReady.GyroY);
+          BLEMidiServer.controlChange(0, 26, midiReady.GyroZ);
+          BLEMidiServer.controlChange(0, 27, midiReady.Yaw);
+          BLEMidiServer.controlChange(0, 28, midiReady.Pitch);
+          BLEMidiServer.controlChange(0, 29, midiReady.Roll);
+      }
+      // send discrete data (only when it changes)
+      if (m5.BtnA.wasPressed() == 1 || m5.BtnA.wasReleased()) {
+        BLEMidiServer.controlChange(0, 30, midiReady.ButtonA);
+      }
+      if (m5.BtnB.wasPressed() == 1 || m5.BtnB.wasReleased() == 1) {
+        BLEMidiServer.controlChange(0, 31, midiReady.ButtonB);
+      }
+      if (global.lastJab[0] != instrument.getJabX() || global.lastJab[1] != instrument.getJabY() || global.lastJab[2] != instrument.getJabZ()) {
+        BLEMidiServer.controlChange(0, 102, midiReady.JabX);
+        BLEMidiServer.controlChange(0, 103, midiReady.JabY);
+        BLEMidiServer.controlChange(0, 104, midiReady.JabZ);
+      }
+      if (global.lastShake[0] != instrument.getShakeX() || global.lastShake[1] != instrument.getShakeY() || global.lastShake[2] != instrument.getShakeZ()) {
+        BLEMidiServer.controlChange(0, 85, midiReady.ShakeX);
+        BLEMidiServer.controlChange(0, 86, midiReady.ShakeY);
+        BLEMidiServer.controlChange(0, 87, midiReady.ShakeZ);
+      }
+      if (battery.lastPercentage != battery.percentage) {
+        BLEMidiServer.controlChange(0, 105, midiReady.battery);
+      }
+    }
+    #endif
+
+  // Show LCD instructions
+    if (m5.BtnB.wasPressed()) {
+      M5.Axp.SetLDO2(true);
+      M5.Axp.SetLDO3(true);
+      M5.Lcd.fillScreen(BLACK);
+      M5.Lcd.setCursor(0,0);
+      M5.Lcd.setTextSize(1);
+      M5.Lcd.printf("- Release for info\n\n"
+                    "- Hold for setup mode\n\n"
+                    "- Hold Power button to\n"
+                    "  turn off");
+    }
+
   // Check if setup mode has been called
-    if (m5.BtnB.pressedFor(4000)) {
+    if (m5.BtnB.pressedFor(8000)) {
       printf("\nLong button B press, entering setup mode\n");
       M5.Axp.SetLDO2(true);
       M5.Axp.SetLDO3(true);
@@ -423,7 +565,7 @@ void loop() {
     }
 
   // LCD indicator ON/OFF
-    if (m5.BtnB.wasPressed()) {
+    if (m5.BtnB.wasReleased()) {
       M5.Axp.SetLDO2(true);
       M5.Axp.SetLDO3(true);
       M5.Lcd.fillScreen(BLACK);
@@ -431,22 +573,36 @@ void loop() {
       M5.Lcd.setTextSize(1);
       M5.Lcd.printf("%s\n\n", global.deviceName);
       M5.Lcd.setTextSize(3);
-      M5.Lcd.printf("Bat: %u%%\n", battery.percentage);
+      M5.Lcd.printf("Bat:%u%%\n", battery.percentage);
       M5.Lcd.setTextSize(1);
       M5.Lcd.printf("V: %f v\n\n", battery.value);
-      if (!settings.mode) {
-        M5.Lcd.printf("OSC | IP: ");
-        M5.Lcd.println(WiFi.localIP().toString());
-      } else {
-        M5.Lcd.printf("Setup | IP: ");
-        M5.Lcd.println(WiFi.localIP().toString());
-        M5.Lcd.println("            192.168.4.1");
+
+      switch(settings.mode) {
+        case 0: 
+          M5.Lcd.printf("OSC | IP: ");
+          M5.Lcd.println(WiFi.localIP().toString());
+          break;
+        case 1: 
+          M5.Lcd.printf("Setup | IP: ");
+          M5.Lcd.println(WiFi.localIP().toString());
+          M5.Lcd.println("            192.168.4.1");
+          break;
+        case 2:
+          M5.Lcd.printf("MIDI mode");
+          break;
+        default:
+          printf("\nError: wrong mode\n");
+          M5.Lcd.setTextSize(3);
+          M5.Lcd.printf("mode error");
       }
-    } else if (m5.BtnB.wasReleased()) {
-      M5.Lcd.fillScreen(BLACK);
-      M5.Axp.SetLDO2(false);
-      M5.Axp.SetLDO3(false);
     }
+    
+    // turn LCD off after inactivity
+      if (m5.BtnB.releasedFor(global.lcdDelay)) {
+        M5.Lcd.fillScreen(BLACK);
+        M5.Axp.SetLDO2(false);
+        M5.Axp.SetLDO3(false);
+      }
 
   // Checking for timed reboot (called by setup mode) - reboots after 2 seconds
     if (global.rebootFlag && (millis() - 3000 > global.rebootTimer)) {
@@ -460,6 +616,28 @@ void loop() {
 // ┣━ ┃ ┃┃┗┫┃   ┃ ┃┃ ┃┃┗┫┗━┓
 // ╹  ┗━┛╹ ╹┗━╸ ╹ ╹┗━┛╹ ╹┗━┛
 //
+
+// Functions to change range for sending MIDI messages
+  int mapMIDI(float x, float in_min, float in_max, float out_min, float out_max) {
+    float result = (x - in_min) * (out_max - out_min) / (in_max - in_min) + out_min;
+    if (result > out_max) {
+      result = out_max;
+    };
+    if (result < out_min) {
+      result = out_min;
+    };
+    return static_cast<int>(result);
+  };
+  int mapMIDI(float x, float in_min, float in_max) {
+    int result = (x - in_min) * 127 / (in_max - in_min);
+    if (result > 127) {
+      result = 127;
+    };
+    if (result < 0) {
+      result = 0;
+    };
+    return static_cast<int>(result);
+  };
 
 void printVariables() {
   Serial.println("Printing loaded values (settings):");
@@ -476,8 +654,10 @@ void printVariables() {
   Serial.print("OSC port #2: "); Serial.println(settings.oscPORT[1]);
   Serial.print("Local port: "); Serial.println(settings.localPORT);
   Serial.print("Libmapper mode: "); Serial.println(settings.libmapper);
-  if (settings.mode == 2) {Serial.println("Setup mode enabled");} 
-  else {Serial.print("Data transmission mode: "); Serial.println(settings.mode);}
+  if (settings.mode == 1) {Serial.println("Setup mode enabled");} 
+  else {Serial.print("Data transmission mode: ");}
+  if (settings.mode == 0) {Serial.println("STA mode");}
+  else if (settings.mode == 2) {Serial.println("MIDI mode");}
   Serial.println();
 }
 
@@ -577,8 +757,9 @@ void saveJSON() { // Serializing
 
   // read battery level (based on https://www.youtube.com/watch?v=yZjpYmWVLh8&feature=youtu.be&t=88) 
   void readBattery() {
+    battery.lastPercentage = battery.percentage;
     battery.value = M5.Axp.GetVbatData() * 0.001;
-    battery.percentage = static_cast<int>((battery.value - 3.0) * 100 / (3.8 - 3.0));
+    battery.percentage = static_cast<int>((battery.value - 2.8) * 100 / (3.8 - 2.8));
     if (battery.percentage > 100)
       battery.percentage = 100;
     if (battery.percentage < 0)
@@ -629,6 +810,13 @@ String indexProcessor(const String& var) {
   }
   if(var == "MODE1") {
     if(settings.mode == 1) {
+      return "selected";
+    } else {
+      return "";
+    }
+  }
+  if(var == "MODE2") {
+    if(settings.mode == 2) {
       return "selected";
     } else {
       return "";
@@ -736,7 +924,6 @@ void initWebServer() {
       printf("\nSettings received! (HTTP_post):\n");
       if(request->hasParam("reboot", true)) {
           request->send(SPIFFS, "/reboot.html");
-          settings.mode = 0;
           global.rebootFlag = true;
           global.rebootTimer = millis();
       } else {
@@ -834,7 +1021,6 @@ void initWebServer() {
         printf("\nFactory Settings received! (HTTP_post):\n");
         if(request->hasParam("reboot", true)) {
             request->send(SPIFFS, "/reboot.html");
-            settings.mode = 0;
             global.rebootFlag = true;
             global.rebootTimer = millis();
         } else {

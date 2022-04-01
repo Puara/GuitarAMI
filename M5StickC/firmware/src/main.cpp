@@ -20,7 +20,7 @@ https://github.com/mathiasbredholt/libmapper-arduino/issues/3
 // ╺┻┛┗━╸╹  ┗━┛
 //
 
-const unsigned int firmware_version = 220301;
+const unsigned int firmware_version = 220322;
 
 // Turn everything related to MIDI off
 //#define DISABLE_MIDI
@@ -417,8 +417,8 @@ void loop() {
     #endif
 
   // send data via OSC
-    if (settings.osc) {
-      if (settings.mode==0 || settings.mode==1 || WiFi.status() == WL_CONNECTED) { // Send data via OSC ...
+    if (settings.osc && WiFi.status() == WL_CONNECTED) {
+      if (settings.mode==0 || settings.mode==1) { // Send data via OSC ...
           // sending continuous data
             if (millis() - global.oscDelay > global.messageTimer) { 
               global.messageTimer = millis();

@@ -23,7 +23,10 @@ https://github.com/mathiasbredholt/libmapper-arduino/issues/3
 const unsigned int firmware_version = 220322;
 
 // Turn everything related to MIDI off
-//#define DISABLE_MIDI
+#define DISABLE_MIDI
+
+// Disable LCD (save battery?)
+//#define DISABLE_LCD
 
 
 //////////////
@@ -69,6 +72,8 @@ const unsigned int firmware_version = 220322;
   } global;
 
 double pi = 3.141592653589793238462643383279502884;
+
+byte led_pin = 10;
 
 //////////////
 // settings //
@@ -216,15 +221,17 @@ void setup() {
     Serial.begin(115200);
 
   // Initialize the M5StickC
+  #ifndef DISABLE_LCD
     M5.begin();
     M5.IMU.Init();  //Init IMU
     M5.Lcd.setTextColor(ORANGE);  // Set the font color to yellow
     M5.Lcd.setRotation(3);
     M5.Lcd.setTextSize(2);
     M5.Lcd.printf("GuitarAMI\n"
-                  "M5StickC\n"
-                  "module %03i\n"
-                  "Booting...\n",settings.id);
+                  "M5StickC\n");
+  #else
+    pinMode(led_pin, OUTPUT);
+  #endif
 
   // Start FS and check Json file (config.json)
     module.mountFS();
@@ -237,6 +244,11 @@ void setup() {
       printf("\nMode error: changing to setup mode for correction\n");
       saveJSON();
     }
+
+  #ifndef DISABLE_LCD
+    M5.Lcd.printf("module %03i\n"
+                  "Booting...\n",settings.id);              
+  #endif
 
   printf( "\n"
         "GuitarAMI module - M5StickC\n"
@@ -296,17 +308,25 @@ void setup() {
           //"- 'd' to enter deep sleep\n\n");
           "\n");
   
-  M5.Lcd.fillScreen(BLACK);
-  M5.Lcd.setCursor(0,0);
-  M5.Lcd.setTextSize(2);
-  M5.Lcd.printf("Done!\n\n");
-  M5.Lcd.setTextSize(3);
-  M5.Lcd.printf("Have\n"); M5.Lcd.printf("Fun!\n");
-  delay(2000);
-  M5.Lcd.fillScreen(BLACK);
-  M5.Axp.SetLDO2(false); // close tft voltage output
-  M5.Axp.SetLDO3(false); // close tft lcd voltage output
-
+  #ifndef DISABLE_LCD
+    M5.Lcd.fillScreen(BLACK);
+    M5.Lcd.setCursor(0,0);
+    M5.Lcd.setTextSize(2);
+    M5.Lcd.printf("Done!\n\n");
+    M5.Lcd.setTextSize(3);
+    M5.Lcd.printf("Have\n"); M5.Lcd.printf("Fun!\n");
+    delay(2000);
+    M5.Lcd.fillScreen(BLACK);
+    M5.Axp.SetLDO2(false); // close tft voltage output
+    M5.Axp.SetLDO3(false); // close tft lcd voltage output
+  #else
+    for (int i=0; i<4; i++) {
+      digitalWrite(led_pin, LOW);
+      delay(100);
+      digitalWrite(led_pin, HIGH);
+      delay(100);  
+    }
+  #endif
 
 } // end Setup
 
@@ -539,26 +559,32 @@ void loop() {
 
   // Show LCD instructions
     if (m5.BtnB.wasPressed()) {
-      M5.Axp.SetLDO2(true);
-      M5.Axp.SetLDO3(true);
-      M5.Lcd.fillScreen(BLACK);
-      M5.Lcd.setCursor(0,0);
-      M5.Lcd.setTextSize(1);
-      M5.Lcd.printf("- Release for info\n\n"
-                    "- Hold for setup mode\n\n"
-                    "- Hold Power button to\n"
-                    "  turn off");
+      #ifndef DISABLE_LCD
+          M5.Axp.SetLDO2(true);
+          M5.Axp.SetLDO3(true);
+          M5.Lcd.fillScreen(BLACK);
+          M5.Lcd.setCursor(0,0);
+          M5.Lcd.setTextSize(1);
+          M5.Lcd.printf("- Release for info\n\n"
+                        "- Hold for setup mode\n\n"
+                        "- Hold Power button to\n"
+                        "  turn off");
+      #else
+        digitalWrite(led_pin, LOW);
+      #endif
     }
 
   // Check if setup mode has been called
     if (m5.BtnB.pressedFor(8000)) {
       printf("\nLong button B press, entering setup mode\n");
-      M5.Axp.SetLDO2(true);
-      M5.Axp.SetLDO3(true);
-      M5.Lcd.fillScreen(BLACK);
-      M5.Lcd.setCursor(0,0);
-      M5.Lcd.setTextSize(2);
-      M5.Lcd.printf("Entering\nsetup\nmode...");
+      #ifndef DISABLE_LCD
+        M5.Axp.SetLDO2(true);
+        M5.Axp.SetLDO3(true);
+        M5.Lcd.fillScreen(BLACK);
+        M5.Lcd.setCursor(0,0);
+        M5.Lcd.setTextSize(2);
+        M5.Lcd.printf("Entering\nsetup\nmode...");
+      #endif
       settings.mode = 1;
       saveJSON();
       global.rebootFlag = true;
@@ -566,43 +592,49 @@ void loop() {
 
   // LCD indicator ON/OFF
     if (m5.BtnB.wasReleased()) {
-      M5.Axp.SetLDO2(true);
-      M5.Axp.SetLDO3(true);
-      M5.Lcd.fillScreen(BLACK);
-      M5.Lcd.setCursor(0,0);
-      M5.Lcd.setTextSize(1);
-      M5.Lcd.printf("%s\n\n", global.deviceName);
-      M5.Lcd.setTextSize(3);
-      M5.Lcd.printf("Bat:%u%%\n", battery.percentage);
-      M5.Lcd.setTextSize(1);
-      M5.Lcd.printf("V: %f v\n\n", battery.value);
-
-      switch(settings.mode) {
-        case 0: 
-          M5.Lcd.printf("OSC | IP: ");
-          M5.Lcd.println(WiFi.localIP().toString());
-          break;
-        case 1: 
-          M5.Lcd.printf("Setup | IP: ");
-          M5.Lcd.println(WiFi.localIP().toString());
-          M5.Lcd.println("            192.168.4.1");
-          break;
-        case 2:
-          M5.Lcd.printf("MIDI mode");
-          break;
-        default:
-          printf("\nError: wrong mode\n");
-          M5.Lcd.setTextSize(3);
-          M5.Lcd.printf("mode error");
-      }
-    }
-    
-    // turn LCD off after inactivity
-      if (m5.BtnB.releasedFor(global.lcdDelay)) {
+      #ifndef DISABLE_LCD
+        M5.Axp.SetLDO2(true);
+        M5.Axp.SetLDO3(true);
         M5.Lcd.fillScreen(BLACK);
-        M5.Axp.SetLDO2(false);
-        M5.Axp.SetLDO3(false);
-      }
+        M5.Lcd.setCursor(0,0);
+        M5.Lcd.setTextSize(1);
+        M5.Lcd.printf("%s\n\n", global.deviceName);
+        M5.Lcd.setTextSize(3);
+        M5.Lcd.printf("Bat:%u%%\n", battery.percentage);
+        M5.Lcd.setTextSize(1);
+        M5.Lcd.printf("V: %f v\n\n", battery.value);
+
+        switch(settings.mode) {
+          case 0: 
+            M5.Lcd.printf("OSC | IP: ");
+            M5.Lcd.println(WiFi.localIP().toString());
+            break;
+          case 1: 
+            M5.Lcd.printf("Setup | IP: ");
+            M5.Lcd.println(WiFi.localIP().toString());
+            M5.Lcd.println("            192.168.4.1");
+            break;
+          case 2:
+            M5.Lcd.printf("MIDI mode");
+            break;
+          default:
+            printf("\nError: wrong mode\n");
+            M5.Lcd.setTextSize(3);
+            M5.Lcd.printf("mode error");
+        }
+      #else
+        digitalWrite(led_pin, HIGH);
+      #endif
+    }
+
+  // turn LCD off after inactivity
+    #ifndef DISABLE_LCD
+    if (m5.BtnB.releasedFor(global.lcdDelay)) {
+      M5.Lcd.fillScreen(BLACK);
+      M5.Axp.SetLDO2(false);
+      M5.Axp.SetLDO3(false);
+    }
+    #endif
 
   // Checking for timed reboot (called by setup mode) - reboots after 2 seconds
     if (global.rebootFlag && (millis() - 3000 > global.rebootTimer)) {

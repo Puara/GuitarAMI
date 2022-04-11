@@ -1,10 +1,10 @@
 {
-    "id": 1,
+    "id": 3,
     "author": "Edu Meneses",
     "institution": "IDMIL (2022)",
     "APpasswd": "mappings",
-    "lastConnectedNetwork": "SSID",
-    "lastStoredPsk": "password",
+    "lastConnectedNetwork": "bet",
+    "lastStoredPsk": "bernardoedutati",
     "firmware": 0,
     "oscIP1": "192.168.1.1",
     "oscPORT1": 8000,

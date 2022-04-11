@@ -1,4 +1,4 @@
-#N canvas 299 136 1507 974 10;
+#N canvas 304 114 1507 974 10;
 #X obj 380 287 cnv 15 553 283 empty empty empty 20 12 0 14 -1 -66577
 0;
 #X obj 377 284 cnv 15 550 280 empty empty INSTRUMENT 20 12 0 14 -228856
@@ -109,27 +109,35 @@
 #X obj 16 351 cnv 15 330 215 empty empty RAW 20 12 0 14 -228856 -66577
 0;
 #X obj 30 388 vsl 45 135 -2 2 0 0 empty empty AccelX 0 -9 0 10 -262144
--1 -1 0 1;
+-1 -1 7752 1;
 #X obj 80 388 vsl 45 135 -2 2 0 0 empty empty AccelY 0 -9 0 10 -262144
--1 -1 0 1;
+-1 -1 6541 1;
 #X obj 130 388 vsl 45 135 -2 2 0 0 empty empty AccelZ 0 -9 0 10 -262144
--1 -1 0 1;
+-1 -1 10132 1;
 #X obj 180 388 vsl 45 135 -2000 2000 0 0 empty empty GyroX 0 -9 0 10
--262144 -1 -1 0 1;
+-262144 -1 -1 6706 1;
 #X obj 230 388 vsl 45 135 -2000 2000 0 0 empty empty GyroY 0 -9 0 10
--262144 -1 -1 0 1;
+-262144 -1 -1 6665 1;
 #X obj 280 388 vsl 45 135 -2000 2000 0 0 empty empty GyroZ 0 -9 0 10
--262144 -1 -1 0 1;
+-262144 -1 -1 6705 1;
 #X obj 617 132 timer;
 #X floatatom 617 156 8 0 0 0 - - -;
 #X obj 617 107 t b b;
 #X obj 617 82 r rawtimer;
 #N canvas 0 22 450 278 (subpatch) 0;
 #X array rawtime 100 float 1;
-#A 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0
-0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0
-0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0
-0;
+#A 0 2.90249 1.45125 1.45125 15.9637 15.9637 10.1587 5.80499 14.5125
+1.45125 15.9637 8.70748 1.45125 5.80499 15.9637 7.25624 0 1.45125 1.45125
+21.7687 21.7687 4.35374 1.45125 4.35374 15.9637 5.80499 5.80499 15.9637
+10.1587 5.80499 8.70748 1.45125 5.80499 4.35374 10.1587 5.80499 5.80499
+18.8662 1.45125 1.45125 14.5125 1.45125 8.70748 1.45125 18.8662 1.45125
+1.45125 7.25624 1.45125 1.45125 44.9887 1.45125 5.80499 10.1587 4.35374
+1.45125 24.6712 1.45125 4.35374 1.45125 15.9637 4.35374 11.61 8.70748
+1.45125 4.35374 1.45125 29.0249 2.90249 4.35374 8.70748 1.45125 1.45125
+15.9637 4.35374 1.45125 26.1224 10.1587 5.80499 10.1587 5.80499 8.70748
+1.45125 15.9637 5.80499 10.1587 4.35374 1.45125 24.6712 1.45125 5.80499
+10.1587 5.80499 5.80499 10.1587 8.70748 1.45125 5.80499 15.9637 2.90249
+1.45125;
 #X coords 0 100 99 0 200 140 1;
 #X restore 411 79 graph;
 #N canvas 254 685 568 475 timegraph 0;
@@ -175,7 +183,7 @@
 #X floatatom 764 425 10 0 0 0 - - -;
 #X floatatom 832 425 10 0 0 0 - - -;
 #X obj 734 401 unpack f f f;
-#X floatatom 224 311 4 0 0 1 % - -;
+#X floatatom 211 321 4 0 0 1 % - -;
 #X text 757 378 YPR;
 #X obj 410 388 vsl 35 135 0 100 0 0 empty empty ShakeX 0 -9 0 10 -262144
 -1 -1 0 1;
@@ -188,13 +196,13 @@
 #X floatatom 495 531 6 0 0 0 - - -;
 #X obj 435 344 unpack f f f;
 #X obj 536 388 vsl 35 135 -2000 2000 0 0 empty empty JabX 0 -9 0 10
--262144 -1 -1 0 1;
+-262144 -1 -1 6700 1;
 #X floatatom 536 531 6 0 0 0 - - -;
 #X obj 578 388 vsl 35 135 -2000 2000 0 0 empty empty JabY 0 -9 0 10
--262144 -1 -1 0 1;
+-262144 -1 -1 7325 1;
 #X floatatom 578 531 6 0 0 0 - - -;
 #X obj 621 388 vsl 35 135 -2000 2000 0 0 empty empty JabZ 0 -9 0 10
--262144 -1 -1 0 1;
+-262144 -1 -1 6700 1;
 #X floatatom 621 531 6 0 0 0 - - -;
 #X obj 515 344 unpack f f f;
 #X obj 70 20 loadbang;
@@ -207,16 +215,15 @@
 #X obj 71 285 route accl gyro, f 16;
 #X obj 445 304 route shakexyz jabxyz ypr buttonA buttonB;
 #X obj 698 462 vsl 35 64 -180 180 0 0 empty empty Yall 0 -9 0 10 -262144
--1 -1 0 1;
+-1 -1 384 1;
 #X floatatom 698 535 6 0 0 0 - - -;
 #X obj 764 462 vsl 35 64 -180 180 0 0 empty empty Pitch 0 -9 0 10 -262144
--1 -1 0 1;
+-1 -1 2684 1;
 #X floatatom 764 535 6 0 0 0 - - -;
 #X obj 833 462 vsl 35 64 -180 180 0 0 empty empty Roll 0 -9 0 10 -262144
--1 -1 0 1;
+-1 -1 3118 1;
 #X floatatom 833 535 6 0 0 0 - - -;
-#X obj 97 218 route GuitarAMI_m5_001;
-#N canvas 964 898 590 464 msg_recorder 0;
+#N canvas 795 386 590 464 msg_recorder 0;
 #X obj 122 110 realtime;
 #X obj 434 42 inlet;
 #X obj 332 41 inlet;
@@ -286,19 +293,7 @@
 #X obj 97 246 route raw instrument battery vbattery;
 #X floatatom 224 289 10 0 0 0 - - -;
 #X text 223 271 Battery;
-#N canvas 2458 1484 450 300 make_list 0;
-#X obj 31 17 inlet;
-#X obj 95 19 inlet;
-#X obj 27 64 list prepend battery volt;
-#X obj 85 124 list append;
-#X obj 85 147 outlet;
-#X obj 193 65 list prepend percent;
-#X connect 0 0 2 0;
-#X connect 1 0 5 0;
-#X connect 2 0 3 0;
-#X connect 3 0 4 0;
-#X connect 5 0 3 1;
-#X restore 1100 69 pd make_list;
+#X obj 97 218 route GuitarAMI_m5_001;
 #X connect 8 0 6 0;
 #X connect 11 0 9 0;
 #X connect 16 0 12 0;
@@ -342,7 +337,7 @@
 #X connect 126 0 106 0;
 #X connect 126 1 107 0;
 #X connect 126 2 108 0;
-#X connect 128 0 166 0;
+#X connect 128 0 172 0;
 #X connect 129 0 130 0;
 #X connect 130 0 152 0;
 #X connect 130 1 124 0;
@@ -352,7 +347,6 @@
 #X connect 134 0 131 0;
 #X connect 134 1 132 0;
 #X connect 134 2 133 0;
-#X connect 135 0 173 1;
 #X connect 137 0 138 0;
 #X connect 139 0 140 0;
 #X connect 141 0 142 0;
@@ -377,13 +371,11 @@
 #X connect 160 0 161 0;
 #X connect 162 0 163 0;
 #X connect 164 0 165 0;
-#X connect 166 0 170 0;
-#X connect 168 0 167 2;
-#X connect 169 0 167 4;
-#X connect 170 0 158 0;
-#X connect 170 1 159 0;
-#X connect 170 2 135 0;
-#X connect 170 3 171 0;
-#X connect 171 0 173 0;
-#X connect 173 0 167 0;
+#X connect 167 0 166 2;
+#X connect 168 0 166 4;
+#X connect 169 0 158 0;
+#X connect 169 1 159 0;
+#X connect 169 2 135 0;
+#X connect 169 3 170 0;
+#X connect 172 0 169 0;
 #X coords 0 0 1 1 470 216 0;

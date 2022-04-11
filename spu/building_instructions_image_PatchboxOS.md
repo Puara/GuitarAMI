@@ -1,6 +1,6 @@
 # Builing Instructions - GuitarAMI Sound Processing Unit
 
-Using Rpi 4B + Pisound
+Using Rpi 4B + Pisound + PatchboxOS
 
 ## Prepare PatchboxOS
 

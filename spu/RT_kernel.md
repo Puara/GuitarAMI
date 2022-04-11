@@ -5,11 +5,10 @@
   - [Instructions for compiling a generic Kernel (x86) in a Linux machine](#instructions-for-compiling-a-generic-kernel-x86-in-a-linux-machine)
   - [Cross-compiling Raspberry Pi Kernel on a Docker Container](#cross-compiling-raspberry-pi-kernel-on-a-docker-container)
     - [Preparing the container](#preparing-the-container)
-    - [Start compilation](#start-compilation)
+    - [Get kernel source code](#get-kernel-source-code)
+    - [Set PREEMPT-RT custom compilation](#set-preempt-rt-custom-compilation)
     - [Deploying the new Kernel](#deploying-the-new-kernel)
     - [Configuring the Kernel](#configuring-the-kernel)
-    - [Patching the Kernel](#patching-the-kernel)
-  - [Info for next steps](#info-for-next-steps)
 
 ## Information sources
 
@@ -71,6 +70,7 @@ ENV DEBIAN_FRONTEND=noninteractive
 RUN apt-get clean && apt-get update && \
     apt-get install -y \
     time \
+    wget \
     git bc sshfs bison flex libssl-dev make kmod libc6-dev libncurses5-dev \
     crossbuild-essential-armhf \
     crossbuild-essential-arm64
@@ -93,11 +93,11 @@ If you want to jump back into it, you can run `docker start rpi-cross-compile`.
 
 You can also attach and detach the container with `docker attach rpi-cross-compile` and **CTRL-p** **CTRL-q**. Note that this sequence will not work when on VSC. If you need to detach while using VSC it is recommended to run in an external terminal window.
 
-### Start compilation
+### Get kernel source code
 
 If detached of the container, use `docker attach rpi-cross-compile`.
 
-Clone the Rpi linux repo (choose the proper branch): `git clone --depth=1 -b rpi-5.15.y https://github.com/raspberrypi/linux`
+Clone the Rpi linux repo (choose the proper branch): `git clone --depth=1 -b rpi-5.10.y https://github.com/raspberrypi/linux`
 
 For compilation with the default parameters:
 
@@ -107,11 +107,39 @@ KERNEL=kernel8 &&
 make ARCH=arm64 CROSS_COMPILE=aarch64-linux-gnu- bcm2711_defconfig
 ```
 
-Compile (64bits) with *8* cores using `make -j8 ARCH=arm64 CROSS_COMPILE=aarch64-linux-gnu- Image modules dtbs LOCALVERSION=CUSTOM_VERSION_NUMBER`. DO NOT FORGET TO SET THE LOCALVERSION!
+### Set PREEMPT-RT custom compilation
 
-OBS: If you want to check compilation time: `/usr/bin/time --format="Compilation time: %E" make -j8 ARCH=arm64 CROSS_COMPILE=aarch64-linux-gnu- Image modules dtbs`.
+From the [Raspberry Pi Documentation](https://www.raspberrypi.com/documentation/computers/linux_kernel.html#patching-the-kernel).
+Info on kernel configuration tool [here](https://www.raspberrypi.com/documentation/computers/linux_kernel.html#configuring-the-kernel).
 
-OBS: If planning to compile multiple times, you can use `nproc` to check available cores and test with the quantity until you get an optimized compilation speed. Iterate until you find your best fit. Start from the nproc value, try upwards first and downwards only if the upwards attempts show immediate degradation. Check discussion [here](https://unix.stackexchange.com/questions/208568/how-to-determine-the-maximum-number-to-pass-to-make-j-option).
+PREEMPT_RT patches at the Linux Foundation: [https://wiki.linuxfoundation.org/realtime/start](https://wiki.linuxfoundation.org/realtime/start) for info and [https://git.kernel.org/pub/scm/linux/kernel/git/rt/linux-stable-rt.git](https://git.kernel.org/pub/scm/linux/kernel/git/rt/linux-stable-rt.git) for the downloads.
+
+Info on PREEMPT_RT patch versions: [https://wiki.linuxfoundation.org/realtime/preempt_rt_versions](https://wiki.linuxfoundation.org/realtime/preempt_rt_versions)
+
+Currently using kernel 5.10. Patch at [https://cdn.kernel.org/pub/linux/kernel/projects/rt/5.10/](https://cdn.kernel.org/pub/linux/kernel/projects/rt/5.10/)
+
+To patch the kernel with the Preempt-RT patch, we need the patch to match the kernel version. To look for the right patch execute `head Makefile -n 4` at the folder you just cloned.
+
+```bash
+wget https://cdn.kernel.org/pub/linux/kernel/projects/rt/5.10/patch-5.10.106-rt64.patch.gz
+gunzip patch-5.10.106-rt64.patch.gz
+cat patch-5.10.106-rt64.patch | patch -p1
+make ARCH=arm64 CROSS_COMPILE=aarch64-linux-gnu- menuconfig
+```
+
+Parameters changed:
+
+- General Setup
+  - Local version - append to kernel release -> add `SAT-IDMIL` suffix
+  - mark *Automatically append version information to the version string*
+- Kernel Features -> Timer frequency
+  - choose **1000 HZ**
+
+Compile (64bits) with *8* cores using `make -j16 ARCH=arm64 CROSS_COMPILE=aarch64-linux-gnu- Image modules dtbs`.
+
+OBS: If you want to check compilation time: `/usr/bin/time --format="Compilation time: %E" make -j16 ARCH=arm64 CROSS_COMPILE=aarch64-linux-gnu- Image modules dtbs`. Cross-compilation expected time with 8 cores (16 threads) is around 9 min.
+
+OBS: If planning to compile using a different number of cores, you can use `nproc` to check available cores and test with the quantity until you get an optimized compilation speed. Iterate until you find your best fit. Start from the nproc value, try upwards first and downwards only if the upwards attempts show immediate degradation. Check discussion [here](https://unix.stackexchange.com/questions/208568/how-to-determine-the-maximum-number-to-pass-to-make-j-option).
 
 ### Deploying the new Kernel
 
@@ -124,9 +152,9 @@ Use `lsblk` before and after plugging in your SD card to identify it. The smalle
 Navigate into the folder ontaining the kernel (e.g., `~/sources/rpi_kernel_build/linux`) and mount them:
 
 ```bash
-mkdir mnt &&
-mkdir mnt/fat32 &&
-mkdir mnt/ext4 &&
+sudo mkdir mnt &&
+sudo mkdir mnt/fat32 &&
+sudo mkdir mnt/ext4 &&
 sudo mount /dev/mmcblk0p1 mnt/fat32 &&
 sudo mount /dev/mmcblk0p2 mnt/ext4
 ```
@@ -157,35 +185,3 @@ From the [Raspberry Pi Documentation](https://www.raspberrypi.com/documentation/
 Configuration is most commonly done through the make `menuconfig` interface. Alternatively, you can modify your `.config` file manually.
 
 Using menuconfig: `make ARCH=arm64 CROSS_COMPILE=aarch64-linux-gnu- menuconfig`
-
-### Patching the Kernel
-
-From the [Raspberry Pi Documentation](https://www.raspberrypi.com/documentation/computers/linux_kernel.html#patching-the-kernel)
-
-## Info for next steps
-
-Info at [https://lemariva.com/blog/2018/04/raspberry-pi-rt-preempt-tutorial-for-kernel-4-14-y](https://lemariva.com/blog/2018/04/raspberry-pi-rt-preempt-tutorial-for-kernel-4-14-y)
-
-```bash
-echo -e "raspberry\nmappings\nmappings" | passwd
-sudo apt update
-sudo apt upgrade -y
-sudo apt install -y git
-```
-
-I'm currently using _rpi-5.10.y_, so I've only downloaded that branch (~2.75 GB)
-
-`git clone -b rpi-5.10.y https://github.com/raspberrypi/linux.git`
-
-To patch the kernel with the Preempt-RT patch, we need the patch to match the kernel version. To look for the right patch execute `head Makefile -n 4` at the folder you just cloned.
-
-I got the following info:
-
-```bash
-# SPDX-License-Identifier: GPL-2.0
-VERSION = 5
-PATCHLEVEL = 10
-SUBLEVEL = 78
-```
-
-So we need rt patch for 5.10.78. At ...

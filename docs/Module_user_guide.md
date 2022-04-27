@@ -21,7 +21,7 @@
 The module can operate in 3 different modes:
 
 - OSC-STA mode: The module becomes a WiFi client (station mode) and will send OSC messages to the addresses/ports configured on the setup page. Both the module and recipient must be connected to the same network.
-- OSC-AP mode: The module creates it's own WiFi network (access point) and will send OSC messages to the addresses/ports configured on the setup. The AP created uses credentials configured on the setup page and recipient must be connected to the module's network. The AP's name is created using the instrument's name, e.g, *GuitarAMI_module_XXX*. The default password is `mappings`.
+- OSC-AP mode: The module creates its own WiFi network (access point) and will send OSC messages to the addresses/ports configured on the setup. The AP created uses credentials configured on the setup page and recipient must be connected to the module's network. The AP's name is created using the instrument's name, e.g, *GuitarAMI_module_XXX*. The default password is `mappings`.
 - MIDI mode: The module behaves as a BLE MIDI device, and can be used as a wireless midi controller.
 
 ### Setup
@@ -37,11 +37,11 @@ The module also has a special setup mode. To access the mode, hold the capacitiv
 The setup options include:
 
 - Network:
-  - SSID: network SSID for STA mode (will auto-fill with current SSID)
-  - SSID Password: password for STA mode network (will auto-fill with current password)
+  - SSID: network SSID for STA mode (will autofill with current SSID)
+  - SSID Password: password for STA mode network (will autofill with current password)
 - GuitarAMI module password:
-  - New password: type password for AP and setup modes (leve it blank if you want keep the same password)
-  - Retype new password: retype password for AP and setup modes (leve it blank if you want keep the same password)
+  - New password: type password for AP and setup modes (leave it blank if you want to keep the same password)
+  - Retype new password: retype password for AP and setup modes (leave it blank if you want to keep the same password)
 - Operation mode:
   - STA (station), AP (access point), MIDI
 - OSC send settings:
@@ -49,8 +49,8 @@ The setup options include:
   - Primary port: first port to send OSC messages (STA and AP modes)
   - Secondary IP: second IP address to send OSC messages (STA and AP modes)
   - Secondary port: second port to send OSC messages (STA and AP modes)
-- Scan for networks: open a secondary page with the scanned networks in the area. This list may not be complete and it's necessary to fill the SSID (for STA mode) manually on the setup page (you can copy/paste the SSID from the scan page)
-- SAVE button: click to save the surrent configuration
+- Scan for networks: open a secondary page with the scanned networks in the area. This list may not be complete, and it's necessary to fill the SSID (for STA mode) manually on the setup page (you can copy/paste the SSID from the scan page)
+- SAVE button: click to save the current configuration
 
 The setup page also contains extra information about the module: Current SSID, Current IP address (STA), Access Point IP, Station (STA) MAC address, Access Point MAC address, module ID (serial #), module author, Institution, and Firmware version.
 
@@ -143,7 +143,7 @@ To update your firmware, please follow the following steps:
 - In a new browser window, type either [http://GuitarAMI_module_XXX.local/update](http://GuitarAMI_module_XXX.local/update) (replace the XXX by your module's ID) or the IP address (if known), e.g., [192.168.0.100/update](192.168.0.100/update)
 - Click on `choose file` and select the apropriate file. Check if the filename is correct (next to the button)
 - Click on `Update Firmware` or `Update SPIFFS` according to the chosen file
-- **DO NOT turn the module OFF during the process**. Wait until the module reboot itself: the update page will be unavailable and the module will enter setup mode again. You can then access the [setup page](#setup) and click on `Close and reboot`
+- **DO NOT turn the module OFF during the process**. Wait until the module reboot itself: the update page will be unavailable, and the module will enter setup mode again. You can then access the [setup page](#setup) and click on `Close and reboot`
 
 ## Information
 

@@ -1,20 +1,14 @@
 # GuitarAMI
 
-GuitarAMI: Augmented Musical Instrument (AMI) using an acoustic guitar
+![Modules](./docs/images_module/modules.jpg "Modules")
+
+The GuitarAMI is an Augmented Musical Instrument (AMI) using an acoustic guitar. The AMI is part of the [Puara](https://github.com/Puara) framework.
 
 [GuitarAMI module - user guide](./docs/Module_user_guide.md)
 
-[Sound Processing Unit - user guide](./docs/SPU_user_guide.md)
-
 ## Building instructions
 
-[GuitarAMI module](./guitar_module/building_instructions_guitar_module.md)
-
-[Sound Processing Unit (SPU) - hardware](./spu/building_instructions_hardware.md)
-
-[Sound Processing Unit (SPU) - OS (PiSound)](./spu/building_instructions_image_PatchboxOS.md)
-
-[Sound Processing Unit (SPU) - OS (FePi)](./spu/building_instructions_image_Fe-Pi.md)
+[GuitarAMI module](./docs/building_instructions_guitar_module.md)
 
 ## Description
 
@@ -22,7 +16,7 @@ Acoustic musical instruments, although very versatile, have intrinsic sonic limi
 
 The GuitarAMI uses sensors installed non-invasively in classical guitars to generate data from gestures that control algorithms to overcome these limitations, providing new possibilities of expression for the performer.
 
-### More Info
+### More Info on the instrument and the research
 
 [https://www.edumeneses.com](https://www.edumeneses.com)
 

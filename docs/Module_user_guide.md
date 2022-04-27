@@ -2,17 +2,17 @@
 
 ![Modules](./images_module/modules.jpg "Modules")
 
-- [Usage instructions](#usage-instructions)
-  - [Operation modes](#operation-modes)
-  - [Setup](#setup)
-  - [LED indicator](#led-indicator)
-  - [Charging your module](#charging-your-module)
-- [OSC namespaces](#osc-namespaces)
-- [MIDI messages](#midi-messages)
-- [Pure Data test patch](#pure-data-test-patch)
-- [Updating module firmware](#updating-module-firmware)
-- [Other Documentation](#other-documentation)
-- [Information](#information)
+- [GuitarAMI Module user guide](#guitarami-module-user-guide)
+  - [Usage instructions](#usage-instructions)
+    - [Operation modes](#operation-modes)
+    - [Setup](#setup)
+    - [LED indicator](#led-indicator)
+    - [Charging your module](#charging-your-module)
+  - [OSC namespaces](#osc-namespaces)
+  - [MIDI messages](#midi-messages)
+  - [Pure Data test patch](#pure-data-test-patch)
+  - [Updating module firmware](#updating-module-firmware)
+  - [Information](#information)
 
 ## Usage instructions
 

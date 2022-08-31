@@ -13,7 +13,7 @@ const unsigned int firmware_version = 210518;
   //#define board_WEMOS
 
 // Turn everything related to libmapper off
-//#define DISABLE_LIBMAPPER
+#define DISABLE_LIBMAPPER
 
 // Turn everything related to MIDI off
 #define DISABLE_MIDI
@@ -52,7 +52,7 @@ const unsigned int firmware_version = 210518;
     Pin pin{ 5, 15, 35, 32, 33 };
   #elif defined(board_TINYPICO)
     Pin pin{ 5, 4, 35, 32, 33 };
-    #include "tinyPICO.h"
+    #include <TinyPICO.h>
     TinyPICO tinypico = TinyPICO();
   #endif
 

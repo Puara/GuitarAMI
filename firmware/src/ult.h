@@ -30,5 +30,7 @@ struct UltData {
 int initUlt(int trig, int echo);
 void ultFilter();
 void readUlt();
+int getUltTrigger();
+int getUltDistance();
 
 #endif

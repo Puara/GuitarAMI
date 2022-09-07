@@ -1,16 +1,8 @@
 {
     "settings": [
         {
-            "name": "Hitchhiker",
-            "value": "Ford"
-        },
-        {
-            "name": "answer_to_everything",
-            "value": 42
-        },
-        {
-            "name": "variable3",
-            "value": 12.345
+            "name": "touch_sensitivity",
+            "value": "870"
         }
     ]
 }

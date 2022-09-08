@@ -2,7 +2,7 @@
     "settings": [
         {
             "name": "touch_sensitivity",
-            "value": "870"
+            "value": 950
         }
     ]
 }

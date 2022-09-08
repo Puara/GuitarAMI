@@ -13,7 +13,7 @@ void Touch::readTouch() {
     uint16_t touchValue;
     touch_pad_read_filtered(Touch::pin, &touchValue);
     Touch::value = touchValue;
-    if (touchValue < Touch::threshold) {
+    if (touchValue < Touch::sensitivity) {
         if (!Touch::touch) {
             Touch::touch = true;
             Touch::timer = millis();
@@ -37,7 +37,7 @@ void Touch::readTouch() {
 
 bool Touch::initTouch(void) {
         touch_pad_init();
-        touch_pad_config(Touch::pin, Touch::threshold);
+        touch_pad_config(Touch::pin, Touch::sensitivity);
         touch_pad_set_voltage(TOUCH_HVOLT_2V7, TOUCH_LVOLT_0V5, TOUCH_HVOLT_ATTEN_1V);
         touch_pad_filter_start(Touch::filterPeriod);
     return 1;
@@ -51,12 +51,12 @@ unsigned int Touch::getValue() {
     return Touch::value;
 };
 
-unsigned int Touch::getThreshold() {
-    return Touch::value;
+unsigned int Touch::getSensitivity() {
+    return Touch::sensitivity;
 };
 
 unsigned int Touch::setSensitivity(int value) {
-    Touch::threshold = value;
+    Touch::sensitivity = value;
     return 1;
 };
 

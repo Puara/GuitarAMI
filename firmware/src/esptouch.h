@@ -23,7 +23,7 @@ class Touch {
         unsigned int filterPeriod = 10;
         long timer;
         unsigned long pressTime;
-        unsigned int threshold = 870;
+        unsigned int sensitivity = 800;
     public:
         bool initTouch(void);
         void readTouch();
@@ -33,7 +33,7 @@ class Touch {
         bool getHold();
         unsigned int getHoldInterval();
         unsigned int setHoldInterval(int value);
-        unsigned int getThreshold();
+        unsigned int getSensitivity();
         unsigned int setSensitivity(int value);
 };
 

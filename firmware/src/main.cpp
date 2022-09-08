@@ -9,9 +9,12 @@
  */
 
 
-unsigned int firmware_version = 20220906;
+unsigned int firmware_version = 220906;
 
 #include "Arduino.h"
+
+// For disabling power saving
+#include "esp_wifi.h"
 
 #include <puara.h>
 #include <puara_gestures.h>
@@ -189,6 +192,9 @@ struct Lm {
     mpr_sig jab = 0;
     float jabMax = 50;
     float jabMin = -50;
+    mpr_sig touch = 0;
+    int touchMax = 1024;
+    int touchMin = 0;
     mpr_sig count = 0;
     int countMax = 100;
     int countMin = 0;
@@ -210,6 +216,7 @@ struct Sensors {
     float euler [3];
     float shake [3];
     float jab [3];
+    int touch; 
     int count;
     int tap;
     int dtap;
@@ -220,18 +227,12 @@ struct Sensors {
 } sensors;
 
 struct Event {
-    bool accl = false;
-    bool gyro = false;
-    bool mag = false;
-    bool quat = false;
-    bool euler = false;
     bool shake = false;
     bool jab = false;
     bool count = false;
     bool tap = false;
     bool dtap = false;
     bool ttap = false;
-    bool ultDistance = false;
     bool ultTrigger = false;
     bool battery;
 } event;
@@ -244,6 +245,9 @@ void setup() {
     #ifdef Arduino_h
         Serial.begin(115200);
     #endif
+
+    // Disable WiFi power save
+    esp_wifi_set_ps(WIFI_PS_NONE);
 
     puara.set_version(firmware_version);
     puara.start();
@@ -259,7 +263,6 @@ void setup() {
     std::cout << "    Initializing capacitive touch sensor... ";
     touch.setSensitivity(std::round(puara.getVarNumber("touch_sensitivity")));
     if (touch.initTouch()) {
-        touch.setSensitivity(touch.getThreshold());
         std::cout << "done" << std::endl;
     } else {
       std::cout << "capacitive touch sensor initialization failed!" << std::endl;
@@ -290,20 +293,19 @@ void setup() {
     lm.euler = mpr_sig_new(lm_dev, MPR_DIR_OUT, "euler", 3, MPR_FLT, "fl", &lm.eulerMin, &lm.eulerMax, 0, 0, 0);
     lm.shake = mpr_sig_new(lm_dev, MPR_DIR_OUT, "shake", 3, MPR_FLT, "fl", &lm.shakeMin, &lm.shakeMax, 0, 0, 0);
     lm.jab = mpr_sig_new(lm_dev, MPR_DIR_OUT, "jab", 3, MPR_FLT, "fl", &lm.jabMin, &lm.jabMax, 0, 0, 0);
+    lm.touch = mpr_sig_new(lm_dev, MPR_DIR_OUT, "touch", 1, MPR_INT32, "un", &lm.touchMin, &lm.touchMax, 0, 0, 0);
     lm.count = mpr_sig_new(lm_dev, MPR_DIR_OUT, "count", 1, MPR_INT32, "un", &lm.countMin, &lm.countMax, 0, 0, 0);
     lm.tap = mpr_sig_new(lm_dev, MPR_DIR_OUT, "tap", 1, MPR_INT32, "un", &lm.tapMin, &lm.tapMax, 0, 0, 0);
     lm.ttap = mpr_sig_new(lm_dev, MPR_DIR_OUT, "triple tap", 1, MPR_INT32, "un", &lm.tapMin, &lm.tapMax, 0, 0, 0);
     lm.dtap = mpr_sig_new(lm_dev, MPR_DIR_OUT, "double tap", 1, MPR_INT32, "un", &lm.tapMin, &lm.tapMax, 0, 0, 0);
     lm.bat = mpr_sig_new(lm_dev, MPR_DIR_OUT, "battery", 1, MPR_FLT, "percent", &lm.batMin, &lm.batMax, 0, 0, 0);
     std::cout << "done" << std::endl;
-
-    std::cout << "\n" 
-    << puara.get_dmi_name() << "\n"
-    << "Edu Meneses \n"
-    << "Metalab - Société des Arts Technologiques (SAT) \n"
-    << "IDMIL - CIRMMT - McGill University \n"
-    << "Firmware version: " <<  firmware_version << "\n" 
-    << std::endl;
+    
+    delay(500);
+    Serial.println(); 
+    Serial.println(puara.get_dmi_name().c_str());
+    Serial.println("Edu Meneses\nMetalab - Société des Arts Technologiques (SAT)\nIDMIL - CIRMMT - McGill University");
+    Serial.print("Firmware version: "); Serial.println(firmware_version); Serial.println("\n");
 }
 
 //////////
@@ -331,33 +333,40 @@ void loop() {
     gestures.updateButton(touch.getValue());
 
     // Preparing arrays for libmapper signals
-    if (sensors.accl[0] != imu.getAccelX()) {sensors.accl[0] = imu.getAccelX(); event.accl = true; } else { event.accl = false; }
-    if (sensors.accl[1] != imu.getAccelY()) {sensors.accl[1] = imu.getAccelY(); event.accl = true; } else { event.accl = false; }
-    if (sensors.accl[2] != imu.getAccelZ()) {sensors.accl[2] = imu.getAccelZ(); event.accl = true; } else { event.accl = false; }
-    if (sensors.gyro[0] != imu.getGyroX()) {sensors.gyro[0] = imu.getGyroX(); event.gyro = true; } else { event.gyro = false; }
-    if (sensors.gyro[1] != imu.getGyroY()) {sensors.gyro[1] = imu.getGyroY(); event.gyro = true; } else { event.gyro = false; }
-    if (sensors.gyro[2] != imu.getGyroZ()) {sensors.gyro[2] = imu.getGyroZ(); event.gyro = true; } else { event.gyro = false; }
-    if (sensors.mag[0] != imu.getMagX()) {sensors.mag[0] = imu.getMagX(); event.mag = true; } else { event.mag = false; }
-    if (sensors.mag[1] != imu.getMagY()) {sensors.mag[1] = imu.getMagY(); event.mag = true; } else { event.mag = false; }
-    if (sensors.mag[2] != imu.getMagZ()) {sensors.mag[2] = imu.getMagZ(); event.mag = true; } else { event.mag = false; }
-    if (sensors.quat[0] != imu.getQuatI()) {sensors.quat[0] = imu.getQuatI(); event.quat = true; } else { event.quat = false; }
-    if (sensors.quat[1] != imu.getQuatJ()) {sensors.quat[1] = imu.getQuatJ(); event.quat = true; } else { event.quat = false; }
-    if (sensors.quat[2] != imu.getQuatK()) {sensors.quat[2] = imu.getQuatK(); event.quat = true; } else { event.quat = false; }
-    if (sensors.quat[3] != imu.getQuatReal()) {sensors.quat[3] = imu.getQuatReal(); event.quat = true; } else { event.quat = false; }
-    if (sensors.euler[0] != imu.getYaw()) {sensors.euler[0] = imu.getYaw(); event.euler = true; } else { event.euler = false; }
-    if (sensors.euler[2] != imu.getPitch()) {sensors.euler[2] = imu.getPitch(); event.euler = true; } else { event.euler = false; }
-    if (sensors.euler[3] != imu.getRoll()) {sensors.euler[3] = imu.getRoll(); event.euler = true; } else { event.euler = false; }
-    if (sensors.shake[0] != gestures.getShakeX()) {sensors.shake[0] = gestures.getShakeX(); event.shake = true; } else { event.shake = false; }
-    if (sensors.shake[1] != gestures.getShakeY()) {sensors.shake[1] = gestures.getShakeY(); event.shake = true; } else { event.shake = false; }
-    if (sensors.shake[2] != gestures.getShakeZ()) {sensors.shake[2] = gestures.getShakeZ(); event.shake = true; } else { event.shake = false; }
-    if (sensors.jab[0] != gestures.getJabX()) {sensors.jab[0] = gestures.getJabX(); event.jab = true; } else { event.jab = false; }
-    if (sensors.jab[1] != gestures.getJabY()) {sensors.jab[1] = gestures.getJabY(); event.jab = true; } else { event.jab = false; }
-    if (sensors.jab[2] != gestures.getJabZ()) {sensors.jab[2] = gestures.getJabZ(); event.jab = true; } else { event.jab = false; }
+        sensors.ultDistance = getUltDistance();
+        sensors.touch = touch.getValue();
+        sensors.accl[0] = imu.getAccelX();
+        sensors.accl[1] = imu.getAccelY();
+        sensors.accl[2] = imu.getAccelZ();
+        sensors.gyro[0] = imu.getGyroX();
+        sensors.gyro[1] = imu.getGyroY();
+        sensors.gyro[2] = imu.getGyroZ();
+        sensors.mag[0] = imu.getMagX();
+        sensors.mag[1] = imu.getMagY();
+        sensors.mag[2] = imu.getMagZ();
+        sensors.quat[0] = imu.getQuatI();
+        sensors.quat[1] = imu.getQuatJ();
+        sensors.quat[2] = imu.getQuatK();
+        sensors.quat[3] = imu.getQuatReal();
+        sensors.euler[0] = imu.getYaw();
+        sensors.euler[2] = imu.getPitch();
+        sensors.euler[3] = imu.getRoll();
+    if (sensors.shake[0] != gestures.getShakeX() || sensors.shake[1] != gestures.getShakeY() || sensors.shake[2] != gestures.getShakeZ()) {
+        sensors.shake[0] = gestures.getShakeX();
+        sensors.shake[1] = gestures.getShakeY();
+        sensors.shake[2] = gestures.getShakeZ();
+        event.shake = true;
+    } else { event.shake = false; }
+    if (sensors.jab[0] != gestures.getJabX() || sensors.jab[1] != gestures.getJabY() || sensors.jab[2] != gestures.getJabZ()) {
+        sensors.jab[0] = gestures.getJabX();
+        sensors.jab[1] = gestures.getJabY();
+        sensors.jab[2] = gestures.getJabZ();
+        event.jab = true;
+    } else { event.jab = false; }
     if (sensors.count != gestures.getButtonCount()) {sensors.count = gestures.getButtonCount(); event.count = true; } else { event.count = false; }
     if (sensors.tap != gestures.getButtonTap()) {sensors.tap = gestures.getButtonTap(); event.tap = true; } else { event.tap = false; }
     if (sensors.dtap != gestures.getButtonDTap()) {sensors.dtap = gestures.getButtonDTap(); event.dtap = true; } else { event.dtap = false; }
     if (sensors.ttap != gestures.getButtonTTap()) {sensors.ttap = gestures.getButtonTTap(); event.ttap = true; } else { event.ttap = false; }
-    if (sensors.ultDistance != getUltDistance()) {sensors.ultDistance = getUltDistance(); event.ultDistance = true; } else { event.ultDistance = false; }
     if (sensors.ultTrigger != getUltTrigger()) {sensors.ultTrigger = getUltTrigger(); event.ultTrigger = true; } else { event.ultTrigger = false; }
     if (sensors.battery != battery.percentage) {sensors.battery = battery.percentage; event.battery = true; } else { event.battery = false; }
 
@@ -370,38 +379,49 @@ void loop() {
     mpr_sig_set_value(lm.euler, 0, 3, MPR_FLT, &sensors.euler);
     mpr_sig_set_value(lm.shake, 0, 3, MPR_FLT, &sensors.shake);
     mpr_sig_set_value(lm.jab, 0, 3, MPR_FLT, &sensors.jab);
+    mpr_sig_set_value(lm.touch, 0, 1, MPR_INT32, &sensors.touch);
     mpr_sig_set_value(lm.count, 0, 1, MPR_INT32, &sensors.count);
     mpr_sig_set_value(lm.tap, 0, 1, MPR_INT32, &sensors.tap);
     mpr_sig_set_value(lm.ttap, 0, 1, MPR_INT32, &sensors.dtap);
     mpr_sig_set_value(lm.dtap, 0, 1, MPR_INT32, &sensors.ttap);
     mpr_sig_set_value(lm.bat, 0, 1, MPR_FLT, &sensors.battery);
 
-    // Sending OSC messages
+    // Sending continuous OSC messages
     if (puara.IP1_ready()) {
-        if (event.ultDistance) {
             oscNamespace.replace(oscNamespace.begin()+baseNamespace.size(),oscNamespace.end(), "ult");
             lo_send(osc1, oscNamespace.c_str(), "i", sensors.ultDistance);
-        }
-        if (event.accl) {
+            oscNamespace.replace(oscNamespace.begin()+baseNamespace.size(),oscNamespace.end(), "touch");
+            lo_send(osc1, oscNamespace.c_str(), "i", sensors.touch);
             oscNamespace.replace(oscNamespace.begin()+baseNamespace.size(),oscNamespace.end(), "accl");
             lo_send(osc1, oscNamespace.c_str(), "fff", sensors.accl[0], sensors.accl[1], sensors.accl[2]);
-        }
-        if (event.gyro) {
             oscNamespace.replace(oscNamespace.begin()+baseNamespace.size(),oscNamespace.end(), "gyro");
             lo_send(osc1, oscNamespace.c_str(), "fff", sensors.gyro[0], sensors.gyro[1], sensors.gyro[2]);
-        }
-        if (event.mag) {
             oscNamespace.replace(oscNamespace.begin()+baseNamespace.size(),oscNamespace.end(), "mag");
             lo_send(osc1, oscNamespace.c_str(), "fff", sensors.mag[0], sensors.mag[1], sensors.mag[2]);
-        }
-        if (event.quat) {
             oscNamespace.replace(oscNamespace.begin()+baseNamespace.size(),oscNamespace.end(), "quat");
             lo_send(osc1, oscNamespace.c_str(), "ffff", sensors.quat[0], sensors.quat[1], sensors.quat[2], sensors.quat[3]);
-        }
-        if (event.euler) {
             oscNamespace.replace(oscNamespace.begin()+baseNamespace.size(),oscNamespace.end(), "euler");
             lo_send(osc1, oscNamespace.c_str(), "fff", sensors.euler[0], sensors.euler[1], sensors.euler[2]);
-        }
+    }
+    if (puara.IP2_ready()) {
+            oscNamespace.replace(oscNamespace.begin()+baseNamespace.size(),oscNamespace.end(), "ult");
+            lo_send(osc2, oscNamespace.c_str(), "i", sensors.ultDistance);
+            oscNamespace.replace(oscNamespace.begin()+baseNamespace.size(),oscNamespace.end(), "touch");
+            lo_send(osc2, oscNamespace.c_str(), "i", sensors.touch);
+            oscNamespace.replace(oscNamespace.begin()+baseNamespace.size(),oscNamespace.end(), "accl");
+            lo_send(osc2, oscNamespace.c_str(), "fff", sensors.accl[0], sensors.accl[1], sensors.accl[2]);
+            oscNamespace.replace(oscNamespace.begin()+baseNamespace.size(),oscNamespace.end(), "gyro");
+            lo_send(osc2, oscNamespace.c_str(), "fff", sensors.gyro[0], sensors.gyro[1], sensors.gyro[2]);
+            oscNamespace.replace(oscNamespace.begin()+baseNamespace.size(),oscNamespace.end(), "mag");
+            lo_send(osc2, oscNamespace.c_str(), "fff", sensors.mag[0], sensors.mag[1], sensors.mag[2]);
+            oscNamespace.replace(oscNamespace.begin()+baseNamespace.size(),oscNamespace.end(), "quat");
+            lo_send(osc2, oscNamespace.c_str(), "ffff", sensors.quat[0], sensors.quat[1], sensors.quat[2], sensors.quat[3]);
+            oscNamespace.replace(oscNamespace.begin()+baseNamespace.size(),oscNamespace.end(), "euler");
+            lo_send(osc2, oscNamespace.c_str(), "fff", sensors.euler[0], sensors.euler[1], sensors.euler[2]);
+    }
+
+    // Sending discrete OSC messages
+    if (puara.IP1_ready()) {
         if (event.shake) {
             oscNamespace.replace(oscNamespace.begin()+baseNamespace.size(),oscNamespace.end(), "shake");
             lo_send(osc1, oscNamespace.c_str(), "fff", sensors.shake[0], sensors.shake[1], sensors.shake[2]);
@@ -431,31 +451,7 @@ void loop() {
             lo_send(osc1, oscNamespace.c_str(), "i", sensors.battery);
         }
     }
-    if (puara.IP2_ready()) { // set namespace and send OSC message for address 2
-        if (event.ultDistance) {
-            oscNamespace.replace(oscNamespace.begin()+baseNamespace.size(),oscNamespace.end(), "ult");
-            lo_send(osc2, oscNamespace.c_str(), "i", sensors.ultDistance);
-        }
-        if (event.accl) {
-            oscNamespace.replace(oscNamespace.begin()+baseNamespace.size(),oscNamespace.end(), "accl");
-            lo_send(osc2, oscNamespace.c_str(), "fff", sensors.accl[0], sensors.accl[1], sensors.accl[2]);
-        }
-        if (event.gyro) {
-            oscNamespace.replace(oscNamespace.begin()+baseNamespace.size(),oscNamespace.end(), "gyro");
-            lo_send(osc2, oscNamespace.c_str(), "fff", sensors.gyro[0], sensors.gyro[1], sensors.gyro[2]);
-        }
-        if (event.mag) {
-            oscNamespace.replace(oscNamespace.begin()+baseNamespace.size(),oscNamespace.end(), "mag");
-            lo_send(osc2, oscNamespace.c_str(), "fff", sensors.mag[0], sensors.mag[1], sensors.mag[2]);
-        }
-        if (event.quat) {
-            oscNamespace.replace(oscNamespace.begin()+baseNamespace.size(),oscNamespace.end(), "quat");
-            lo_send(osc2, oscNamespace.c_str(), "ffff", sensors.quat[0], sensors.quat[1], sensors.quat[2], sensors.quat[3]);
-        }
-        if (event.euler) {
-            oscNamespace.replace(oscNamespace.begin()+baseNamespace.size(),oscNamespace.end(), "euler");
-            lo_send(osc2, oscNamespace.c_str(), "fff", sensors.euler[0], sensors.euler[1], sensors.euler[2]);
-        }
+    if (puara.IP2_ready()) {
         if (event.shake) {
             oscNamespace.replace(oscNamespace.begin()+baseNamespace.size(),oscNamespace.end(), "shake");
             lo_send(osc2, oscNamespace.c_str(), "fff", sensors.shake[0], sensors.shake[1], sensors.shake[2]);
@@ -522,5 +518,5 @@ void loop() {
     #endif    
 
     // run at 100 Hz
-    vTaskDelay(10 / portTICK_PERIOD_MS);
+    //vTaskDelay(10 / portTICK_PERIOD_MS);
 }

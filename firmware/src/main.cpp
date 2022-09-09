@@ -183,9 +183,9 @@ struct Lm {
     mpr_sig quat = 0;
     float quatMax = 1;
     float quatMin = -1;
-    mpr_sig euler = 0;
-    float eulerMax = 180;
-    float eulerMin = -180;
+    mpr_sig ypr = 0;
+    float yprMax = 180;
+    float yprMin = -180;
     mpr_sig shake = 0;
     float shakeMax =  50;
     float shakeMin = -50;
@@ -213,7 +213,7 @@ struct Sensors {
     float gyro [3];
     float mag [3];
     float quat [4];
-    float euler [3];
+    float ypr [3];
     float shake [3];
     float jab [3];
     int touch; 
@@ -262,6 +262,7 @@ void setup() {
 
     std::cout << "    Initializing capacitive touch sensor... ";
     touch.setSensitivity(std::round(puara.getVarNumber("touch_sensitivity")));
+    gestures.setButtonThreshold(touch.getSensitivity());
     if (touch.initTouch()) {
         std::cout << "done" << std::endl;
     } else {
@@ -273,6 +274,14 @@ void setup() {
         std::cout << "done" << std::endl;
     } else {
       std::cout << "capacitive touch sensor initialization failed!" << std::endl;
+    }
+
+    // Initializing IMU
+    std::cout << "    Initializing IMU... ";
+    if (imu.initIMU()) {
+        std::cout << "done" << std::endl;
+    } else {
+        std::cout << "IMU initialization failed!" << std::endl;
     }
 
     std::cout << "    Initializing Liblo server/client... ";
@@ -290,7 +299,7 @@ void setup() {
     lm.gyro = mpr_sig_new(lm_dev, MPR_DIR_OUT, "gyro", 3, MPR_FLT, "rad/s", &lm.gyroMin, &lm.gyroMax, 0, 0, 0);
     lm.mag = mpr_sig_new(lm_dev, MPR_DIR_OUT, "mag", 3, MPR_FLT, "uTesla", &lm.magMin, &lm.magMax, 0, 0, 0);
     lm.quat = mpr_sig_new(lm_dev, MPR_DIR_OUT, "quat", 4, MPR_FLT, "qt", &lm.quatMin, &lm.quatMax, 0, 0, 0);
-    lm.euler = mpr_sig_new(lm_dev, MPR_DIR_OUT, "euler", 3, MPR_FLT, "fl", &lm.eulerMin, &lm.eulerMax, 0, 0, 0);
+    lm.ypr = mpr_sig_new(lm_dev, MPR_DIR_OUT, "ypr", 3, MPR_FLT, "fl", &lm.yprMin, &lm.yprMax, 0, 0, 0);
     lm.shake = mpr_sig_new(lm_dev, MPR_DIR_OUT, "shake", 3, MPR_FLT, "fl", &lm.shakeMin, &lm.shakeMax, 0, 0, 0);
     lm.jab = mpr_sig_new(lm_dev, MPR_DIR_OUT, "jab", 3, MPR_FLT, "fl", &lm.jabMin, &lm.jabMax, 0, 0, 0);
     lm.touch = mpr_sig_new(lm_dev, MPR_DIR_OUT, "touch", 1, MPR_INT32, "un", &lm.touchMin, &lm.touchMax, 0, 0, 0);
@@ -301,6 +310,7 @@ void setup() {
     lm.bat = mpr_sig_new(lm_dev, MPR_DIR_OUT, "battery", 1, MPR_FLT, "percent", &lm.batMin, &lm.batMax, 0, 0, 0);
     std::cout << "done" << std::endl;
     
+    // Using Serial.print and delay to prevent interruptions
     delay(500);
     Serial.println(); 
     Serial.println(puara.get_dmi_name().c_str());
@@ -329,7 +339,10 @@ void loop() {
       batteryFilter();
     }
 
-    gestures.updateJabShake(imu.getGyroX(), imu.getGyroY(), imu.getGyroZ());
+    // read IMU and update puara-gestures
+    if (imu.dataAvailable()) {
+        gestures.updateJabShake(imu.getGyroX(), imu.getGyroY(), imu.getGyroZ());
+    }
     gestures.updateButton(touch.getValue());
 
     // Preparing arrays for libmapper signals
@@ -348,9 +361,9 @@ void loop() {
         sensors.quat[1] = imu.getQuatJ();
         sensors.quat[2] = imu.getQuatK();
         sensors.quat[3] = imu.getQuatReal();
-        sensors.euler[0] = imu.getYaw();
-        sensors.euler[2] = imu.getPitch();
-        sensors.euler[3] = imu.getRoll();
+        sensors.ypr[0] = imu.getYaw();
+        sensors.ypr[1] = imu.getPitch();
+        sensors.ypr[2] = imu.getRoll();
     if (sensors.shake[0] != gestures.getShakeX() || sensors.shake[1] != gestures.getShakeY() || sensors.shake[2] != gestures.getShakeZ()) {
         sensors.shake[0] = gestures.getShakeX();
         sensors.shake[1] = gestures.getShakeY();
@@ -376,7 +389,7 @@ void loop() {
     mpr_sig_set_value(lm.gyro, 0, 3, MPR_FLT, &sensors.gyro);
     mpr_sig_set_value(lm.mag, 0, 3, MPR_FLT, &sensors.mag);
     mpr_sig_set_value(lm.quat, 0, 4, MPR_FLT, &sensors.quat);
-    mpr_sig_set_value(lm.euler, 0, 3, MPR_FLT, &sensors.euler);
+    mpr_sig_set_value(lm.ypr, 0, 3, MPR_FLT, &sensors.ypr);
     mpr_sig_set_value(lm.shake, 0, 3, MPR_FLT, &sensors.shake);
     mpr_sig_set_value(lm.jab, 0, 3, MPR_FLT, &sensors.jab);
     mpr_sig_set_value(lm.touch, 0, 1, MPR_INT32, &sensors.touch);
@@ -400,8 +413,8 @@ void loop() {
             lo_send(osc1, oscNamespace.c_str(), "fff", sensors.mag[0], sensors.mag[1], sensors.mag[2]);
             oscNamespace.replace(oscNamespace.begin()+baseNamespace.size(),oscNamespace.end(), "quat");
             lo_send(osc1, oscNamespace.c_str(), "ffff", sensors.quat[0], sensors.quat[1], sensors.quat[2], sensors.quat[3]);
-            oscNamespace.replace(oscNamespace.begin()+baseNamespace.size(),oscNamespace.end(), "euler");
-            lo_send(osc1, oscNamespace.c_str(), "fff", sensors.euler[0], sensors.euler[1], sensors.euler[2]);
+            oscNamespace.replace(oscNamespace.begin()+baseNamespace.size(),oscNamespace.end(), "ypr");
+            lo_send(osc1, oscNamespace.c_str(), "fff", sensors.ypr[0], sensors.ypr[1], sensors.ypr[2]);
     }
     if (puara.IP2_ready()) {
             oscNamespace.replace(oscNamespace.begin()+baseNamespace.size(),oscNamespace.end(), "ult");
@@ -416,8 +429,8 @@ void loop() {
             lo_send(osc2, oscNamespace.c_str(), "fff", sensors.mag[0], sensors.mag[1], sensors.mag[2]);
             oscNamespace.replace(oscNamespace.begin()+baseNamespace.size(),oscNamespace.end(), "quat");
             lo_send(osc2, oscNamespace.c_str(), "ffff", sensors.quat[0], sensors.quat[1], sensors.quat[2], sensors.quat[3]);
-            oscNamespace.replace(oscNamespace.begin()+baseNamespace.size(),oscNamespace.end(), "euler");
-            lo_send(osc2, oscNamespace.c_str(), "fff", sensors.euler[0], sensors.euler[1], sensors.euler[2]);
+            oscNamespace.replace(oscNamespace.begin()+baseNamespace.size(),oscNamespace.end(), "ypr");
+            lo_send(osc2, oscNamespace.c_str(), "fff", sensors.ypr[0], sensors.ypr[1], sensors.ypr[2]);
     }
 
     // Sending discrete OSC messages

@@ -30,6 +30,9 @@ unsigned int firmware_version = 220906;
 #define imu_LSM9DS1
 // #define imu_BNO080
 
+// Calibrate IMU?
+bool calibrate = true;
+
 // initializing libmapper, puara, puara-gestures, and liblo client
 mpr_dev lm_dev = 0;
 Puara puara;
@@ -495,6 +498,28 @@ void loop() {
         }
     }
 
+    if (calibrate) {
+        Serial.print("Raw:");
+        Serial.print(imu.rawaccelX);
+        Serial.print(',');
+        Serial.print(imu.rawaccelY);
+        Serial.print(',');
+        Serial.print(imu.rawaccelZ);
+        Serial.print(',');
+        Serial.print(imu.rawgyroX);
+        Serial.print(',');
+        Serial.print(imu.rawgyroY);
+        Serial.print(',');
+        Serial.print(imu.rawgyroZ);
+        Serial.print(',');
+        Serial.print(imu.rawmagX);
+        Serial.print(',');
+        Serial.print(imu.rawmagY);
+        Serial.print(',');
+        Serial.print(imu.rawmagZ);
+        Serial.println();
+    }
+
     // Set LED - connection status and battery level
     #ifdef ARDUINO_LOLIN_D32_PRO
         if (battery.percentage < 10) {        // low battery - flickering
@@ -531,5 +556,5 @@ void loop() {
     #endif    
 
     // run at 100 Hz
-    //vTaskDelay(10 / portTICK_PERIOD_MS);
+    vTaskDelay(10 / portTICK_PERIOD_MS);
 }

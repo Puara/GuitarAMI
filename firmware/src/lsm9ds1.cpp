@@ -144,6 +144,16 @@ LSM9DS1 myIMU; // initialize library class
             myIMU.readMag();
         }
 
+        rawaccelX = myIMU.calcAccel(myIMU.ax);
+        rawaccelY = myIMU.calcAccel(myIMU.ay);
+        rawaccelZ = myIMU.calcAccel(myIMU.az);
+        rawgyroX = myIMU.calcGyro(myIMU.gx);
+        rawgyroY = myIMU.calcGyro(myIMU.gy);
+        rawgyroZ = myIMU.calcGyro(myIMU.gz);
+        rawmagX = myIMU.calcMag(myIMU.mx);
+        rawmagY = myIMU.calcMag(myIMU.my);
+        rawmagZ = myIMU.calcMag(myIMU.mz);
+
         Imu_LSM9DS1::accelX = myIMU.calcAccel(myIMU.ax) * 9.80665; // in m/s^2, converted from g's
         Imu_LSM9DS1::accelY = myIMU.calcAccel(myIMU.ay) * 9.80665; // in m/s^2, converted from g's
         Imu_LSM9DS1::accelZ = myIMU.calcAccel(myIMU.az) * 9.80665; // in m/s^2, converted from g's

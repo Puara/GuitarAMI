@@ -34,6 +34,16 @@ class Imu_LSM9DS1 {
         float getRoll();
         float getPitch();
         float getYaw();
+
+        float rawaccelX = 0.0;
+        float rawaccelY = 0.0;
+        float rawaccelZ = 0.0;
+        float rawgyroX = 0.0; 
+        float rawgyroY = 0.0;
+        float rawgyroZ = 0.0;
+        float rawmagX = 0.0;
+        float rawmagY = 0.0;
+        float rawmagZ = 0.0;
     private:
         void MadgwickQuaternionUpdate(float ax, float ay, float az, float gx, float gy, float gz, float mx, float my, float mz);
         void taitBryanAngles(float w, float x, float y, float z);

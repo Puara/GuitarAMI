@@ -518,6 +518,7 @@ void loop() {
         Serial.print(',');
         Serial.print(imu.rawmagZ);
         Serial.println();
+        //Serial.println("Raw:48,-80.8252,-6,0,-1,-413,-310,680");
     }
 
     // Set LED - connection status and battery level

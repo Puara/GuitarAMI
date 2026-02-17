@@ -68,9 +68,10 @@ struct Pin {
 #ifdef ARDUINO_LOLIN_D32_PRO
     Pin pin{ 5, 15, 35, 32, 33 };
 #elif defined(ARDUINO_TINYPICO)
-    #include "TinyPICO.h"
     Pin pin{ 5, 4, 35, 32, 33 };
-    TinyPICO tinypico = TinyPICO();
+    // Disabling TinyPico helper as it needs update for version 3.x of the ESP32 Arduino Core
+    //#include "TinyPICO.h"
+    //TinyPICO tinypico = TinyPICO();
 #endif
 
 //////////////////////////////////
@@ -87,31 +88,32 @@ struct BatteryData {
     std::deque<int> filterArray; // store last values
 } battery;
 
-// read battery level (based on https://www.youtube.com/watch?v=yZjpYmWVLh8&feature=youtu.be&t=88) 
-void readBattery() {
-    #ifdef ARDUINO_LOLIN_D32_PRO
-        battery.value = analogRead(pin.battery) / 4096.0 * 7.445;
-    #elif defined(ARDUINO_TINYPICO)
-        battery.value = tinypico.GetBatteryVoltage();
-    #endif
-    battery.percentage = static_cast<int>((battery.value - 2.9) * 100 / (4.15 - 2.9));
-    if (battery.percentage > 100)
-        battery.percentage = 100;
-    if (battery.percentage < 0)
-        battery.percentage = 0;
-}
+// Disabling TinyPico helper functions as it needs update for version 3.x of the ESP32 Arduino Core
+// // read battery level (based on https://www.youtube.com/watch?v=yZjpYmWVLh8&feature=youtu.be&t=88) 
+// void readBattery() {
+//     #ifdef ARDUINO_LOLIN_D32_PRO
+//         battery.value = analogRead(pin.battery) / 4096.0 * 7.445;
+//     #elif defined(ARDUINO_TINYPICO)
+//         battery.value = tinypico.GetBatteryVoltage();
+//     #endif
+//     battery.percentage = static_cast<int>((battery.value - 2.9) * 100 / (4.15 - 2.9));
+//     if (battery.percentage > 100)
+//         battery.percentage = 100;
+//     if (battery.percentage < 0)
+//         battery.percentage = 0;
+// }
 
-void batteryFilter() {
-    battery.filterArray.push_back(battery.percentage);
-    if(battery.filterArray.size() > battery.queueAmount) {
-        battery.filterArray.pop_front();
-    }
-    battery.percentage = 0;
-    for (int i=0; i<battery.filterArray.size(); i++) {
-        battery.percentage += battery.filterArray.at(i);
-    }
-    battery.percentage /= battery.filterArray.size();
-}
+// void batteryFilter() {
+//     battery.filterArray.push_back(battery.percentage);
+//     if(battery.filterArray.size() > battery.queueAmount) {
+//         battery.filterArray.pop_front();
+//     }
+//     battery.percentage = 0;
+//     for (int i=0; i<battery.filterArray.size(); i++) {
+//         battery.percentage += battery.filterArray.at(i);
+//     }
+//     battery.percentage /= battery.filterArray.size();
+// }
 
 ///////////////
 // OSC / UDP //
@@ -189,7 +191,7 @@ void setup() {
 
   std::cout << "    Initializing capacitive touch sensor... ";
   touch.setSensitivity(std::round(puara.getVarNumber("touch_sensitivity")));
-  gestures.setButtonThreshold(touch.getSensitivity());
+
   if (touch.initTouch()) {
       std::cout << "done" << std::endl;
   } else {
@@ -212,7 +214,7 @@ void setup() {
   }
 
   Serial.println(); 
-  Serial.println(puara.get_dmi_name().c_str());
+  //Serial.println(puara.dmi_name().c_str());
   Serial.println("Edu Meneses\nSociété des Arts Technologiques (SAT)\nIDMIL - CIRMMT - McGill University");
   Serial.println(); 
 }
@@ -228,12 +230,13 @@ void loop() {
   sensors.touch = touch.getValue();
   button.update();
 
-  // read battery
-  if (millis() - battery.interval > battery.timer) {
-    battery.timer = millis();
-    readBattery();
-    batteryFilter();
-  }
+// Disabling TinyPico helper functions as it needs update for version 3.x of the ESP32 Arduino Core
+//   // read battery
+//   if (millis() - battery.interval > battery.timer) {
+//     battery.timer = millis();
+//     readBattery();
+//     batteryFilter();
+//   }
 
   // read IMU and update puara-gestures
   if (imu.dataAvailable()) {
@@ -246,10 +249,10 @@ void loop() {
     puaraIMU.magn.x = imu.getMagX();
     puaraIMU.magn.y = imu.getMagY();
     puaraIMU.magn.z = imu.getMagZ();
-    puaraQuat.i = imu.getQuatI();
-    puaraQuat.j = imu.getQuatJ();
-    puaraQuat.k = imu.getQuatK();
-    puaraQuat.w = imu.getQuatReal();
+    puaraQuat.w = imu.getQuatI();
+    puaraQuat.x = imu.getQuatJ();
+    puaraQuat.y = imu.getQuatK();
+    puaraQuat.z = imu.getQuatReal();
     puaraYPR.x = imu.getYaw();
     puaraYPR.y = imu.getPitch();
     puaraYPR.z = imu.getRoll();
@@ -268,7 +271,7 @@ void loop() {
     /* Add messages by appending to msg1 as shown below using msg1.add(). All */
     /* messages will be sent simultaneously in the same packet. */
 
-    msg1.add(sensor);
+    msg1.add(puaraIMU.accl.x);
     //  msg1.add(sensor_analog);
     //  msg1.add(button);
 
@@ -281,40 +284,41 @@ void loop() {
     msg1.empty();
   }
 
-  // Set LED - connection status and battery level
-  #ifdef ARDUINO_LOLIN_D32_PRO
-    if (battery.percentage < 10) {        // low battery - flickering
-    led.setInterval(75);
-    led_var.ledValue = led.blink(255, 50);
-    ledcWrite(0, led_var.ledValue);
-    } else {
-        if (puara.get_StaIsConnected()) { // blinks when connected, cycle when disconnected
-            led.setInterval(1000);
-            led_var.ledValue = led.blink(255, 40);
-            ledcWrite(0, led_var.ledValue);
-        } else {
-            led.setInterval(4000);
-            led_var.ledValue = led.cycle(led_var.ledValue, 0, 255);
-            ledcWrite(0, led_var.ledValue);
-        }
-    }
-  #elif defined(ARDUINO_TINYPICO)
-    if (battery.percentage < 10) {                // low battery (red)
-        led.setInterval(20);
-        led_var.color = led.blink(255, 20);
-        tinypico.DotStar_SetPixelColor(led_var.color, 0, 0);
-    } else {
-        if (puara.get_StaIsConnected()) {         // blinks when connected, cycle when disconnected
-            led.setInterval(1000);                // RGB: 0, 128, 255 (Dodger Blue)
-            led_var.color = led.blink(255,20);
-            tinypico.DotStar_SetPixelColor(0, uint8_t(led_var.color/2), led_var.color);
-        } else {
-            led.setInterval(4000);
-            led_var.color = led.cycle(led_var.color, 0, 255);
-            tinypico.DotStar_SetPixelColor(0, uint8_t(led_var.color/2), led_var.color);
-        }
-    }
-  #endif    
+// Disabling TinyPico helper functions as it needs update for version 3.x of the ESP32 Arduino Core
+//   // Set LED - connection status and battery level
+//   #ifdef ARDUINO_LOLIN_D32_PRO
+//     if (battery.percentage < 10) {        // low battery - flickering
+//     led.setInterval(75);
+//     led_var.ledValue = led.blink(255, 50);
+//     ledcWrite(0, led_var.ledValue);
+//     } else {
+//         if (puara.get_StaIsConnected()) { // blinks when connected, cycle when disconnected
+//             led.setInterval(1000);
+//             led_var.ledValue = led.blink(255, 40);
+//             ledcWrite(0, led_var.ledValue);
+//         } else {
+//             led.setInterval(4000);
+//             led_var.ledValue = led.cycle(led_var.ledValue, 0, 255);
+//             ledcWrite(0, led_var.ledValue);
+//         }
+//     }
+//   #elif defined(ARDUINO_TINYPICO)
+//     if (battery.percentage < 10) {                // low battery (red)
+//         led.setInterval(20);
+//         led_var.color = led.blink(255, 20);
+//         tinypico.DotStar_SetPixelColor(led_var.color, 0, 0);
+//     } else {
+//         if (puara.get_StaIsConnected()) {         // blinks when connected, cycle when disconnected
+//             led.setInterval(1000);                // RGB: 0, 128, 255 (Dodger Blue)
+//             led_var.color = led.blink(255,20);
+//             tinypico.DotStar_SetPixelColor(0, uint8_t(led_var.color/2), led_var.color);
+//         } else {
+//             led.setInterval(4000);
+//             led_var.color = led.cycle(led_var.color, 0, 255);
+//             tinypico.DotStar_SetPixelColor(0, uint8_t(led_var.color/2), led_var.color);
+//         }
+//     }
+//   #endif    
 
   // run at 100 Hz
   //vTaskDelay(10 / portTICK_PERIOD_MS);

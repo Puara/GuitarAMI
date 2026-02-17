@@ -1,28 +1,22 @@
 //****************************************************************************//
 // GuitarAMI Module                                                           //
 // Input Devices and Music Interaction Laboratory (IDMIL), McGill University  //
-// Edu Meneses (2022) - https://www.edumeneses.com                            //
+// Edu Meneses (2026) - https://www.edumeneses.com                            //
 //****************************************************************************//
 
-/* Created using the Puara template: https://github.com/Puara/puara-module-template 
+/* 
+ * Created using the Puara templates: https://github.com/Puara/puara-module-templates 
  * The template contains a fully commented version for the commonly used commands 
  */
 
-
-unsigned int firmware_version = 220906;
-
 #include "Arduino.h"
+#include "puara.h"
+#include "puara/gestures.h"
+#include "puara/structs.h"
+#include <OSCMessage.h>
+#include <WiFiUdp.h>
 
-// For disabling power saving
-#include "esp_wifi.h"
-
-#include <puara.h>
-#include <puara_gestures.h>
-#include <mapper.h>
-
-#include <deque>
-#include <cmath>
-#include <algorithm>
+#include <iostream>
 
 /* (Un)comment the following lines as some GuitarAMi modules
  * (e.g., GuitarAMI module #003) use the BNO080 IMU
@@ -30,14 +24,34 @@ unsigned int firmware_version = 220906;
 #define imu_LSM9DS1
 // #define imu_BNO080
 
-// initializing libmapper, puara, puara-gestures, and liblo client
-mpr_dev lm_dev = 0;
 Puara puara;
-PuaraGestures gestures;
-lo_address osc1;
-lo_address osc2;
-std::string baseNamespace = "/";
-std::string oscNamespace;
+
+struct Sensors {
+  int ultDistance;
+  int touch;
+  int ultTrigger;
+  int battery;
+} sensors;
+
+puara_gestures::Imu9Axis puaraIMU;
+puara_gestures::Quaternion puaraQuat;
+puara_gestures::Coord3D puaraYPR;
+puara_gestures::Jab3D jab(&puaraIMU.accl);
+puara_gestures::Shake3D shake(&puaraIMU.accl);
+puara_gestures::Button button(&sensors.touch);
+
+IMU_Orientation orientation;
+
+struct Event {
+    bool shake = false;
+    bool jab = false;
+    bool count = false;
+    bool tap = false;
+    bool dtap = false;
+    bool ttap = false;
+    bool ultTrigger = false;
+    bool battery;
+} event;
 
 /////////////////////
 // Pin definitions //
@@ -99,6 +113,13 @@ void batteryFilter() {
     battery.percentage /= battery.filterArray.size();
 }
 
+///////////////
+// OSC / UDP //
+///////////////
+
+WiFiUDP Udp;
+std::string oscIP{};
+int oscPort{};
 
 //////////////////////////////////
 // Include Touch function files //
@@ -140,396 +161,174 @@ struct Led_variables {
     uint8_t color = 0;
 } led_var;
 
-//////////////////////
-// Liblo OSC server //
-//////////////////////
-
-void error(int num, const char *msg, const char *path) {
-    printf("Liblo server error %d in path %s: %s\n", num, path, msg);
-    fflush(stdout);
+void onSettingsChanged() {
+  Udp.begin(puara.getVarNumber("localPORT"));
+  oscIP = puara.getVarText("oscIP");
+  oscPort = puara.getVarNumber("oscPORT");
 }
-lo_server_thread osc_server;
-
-int generic_handler(const char *path, const char *types, lo_arg ** argv,
-                    int argc, lo_message data, void *user_data) {
-    for (int i = 0; i < argc; i++) {
-        printf("arg %d '%c' ", i, types[i]);
-        lo_arg_pp((lo_type)types[i], argv[i]);
-        printf("\n");
-    }
-    printf("\n");
-    fflush(stdout);
-
-    return 1;
-}
-
-////////////////////////////////////////////////////////
-// Libmapper stuff with specific forward declarations //
-////////////////////////////////////////////////////////
-
-struct Lm {
-    mpr_sig ult = 0;
-    int ultMax = 500;
-    int ultMin = 0;
-    mpr_sig accel = 0;
-    float accelMax = 50;
-    float accelMin = -50;
-    mpr_sig gyro = 0;
-    float gyroMax = 25;
-    float gyroMin = -25;
-    mpr_sig mag = 0;
-    float magMax = 25;
-    float magMin = -25;
-    mpr_sig quat = 0;
-    float quatMax = 1;
-    float quatMin = -1;
-    mpr_sig ypr = 0;
-    float yprMax = 180;
-    float yprMin = -180;
-    mpr_sig shake = 0;
-    float shakeMax =  50;
-    float shakeMin = -50;
-    mpr_sig jab = 0;
-    float jabMax = 50;
-    float jabMin = -50;
-    mpr_sig touch = 0;
-    int touchMax = 1024;
-    int touchMin = 0;
-    mpr_sig count = 0;
-    int countMax = 100;
-    int countMin = 0;
-    mpr_sig tap = 0;
-    mpr_sig ttap = 0;
-    mpr_sig dtap = 0;
-    int tapMax = 1;
-    int tapMin = 0;
-    mpr_sig bat = 0;
-    int batMax = 100;
-    int batMin = 0;
-} lm;
-
-struct Sensors {
-    float accl [3];
-    float gyro [3];
-    float mag [3];
-    float quat [4];
-    float ypr [3];
-    float shake [3];
-    float jab [3];
-    int touch; 
-    int count;
-    int tap;
-    int dtap;
-    int ttap;
-    int ultDistance;
-    int ultTrigger;
-    int battery;
-} sensors;
-
-struct Event {
-    bool shake = false;
-    bool jab = false;
-    bool count = false;
-    bool tap = false;
-    bool dtap = false;
-    bool ttap = false;
-    bool ultTrigger = false;
-    bool battery;
-} event;
 
 ///////////
 // setup //
 ///////////
 
 void setup() {
-    #ifdef Arduino_h
-        Serial.begin(115200);
-    #endif
+  #ifdef Arduino_h
+    Serial.begin(115200);
+  #endif
 
-    // Disable WiFi power save
-    esp_wifi_set_ps(WIFI_PS_NONE);
+  puara.start();
+  Udp.begin(puara.getVarNumber("localPORT"));
+  puara.set_settings_changed_handler(onSettingsChanged);
+  oscIP = puara.getVarText("oscIP");
+  oscPort = puara.getVarNumber("oscPORT");
 
-    puara.set_version(firmware_version);
-    puara.start();
-    baseNamespace.append(puara.get_dmi_name());
-    baseNamespace.append("/");
-    oscNamespace = baseNamespace;
+  #ifdef ARDUINO_LOLIN_D32_PRO // LED init for WEMOS boards
+    ledcSetup(0, 5000, 8);
+    ledcAttachPin(pin.led, 0);
+  #endif
 
-    #ifdef ARDUINO_LOLIN_D32_PRO // LED init for WEMOS boards
-      ledcSetup(0, 5000, 8);
-      ledcAttachPin(pin.led, 0);
-    #endif
+  std::cout << "    Initializing capacitive touch sensor... ";
+  touch.setSensitivity(std::round(puara.getVarNumber("touch_sensitivity")));
+  gestures.setButtonThreshold(touch.getSensitivity());
+  if (touch.initTouch()) {
+      std::cout << "done" << std::endl;
+  } else {
+    std::cout << "capacitive touch sensor initialization failed!" << std::endl;
+  }
 
-    std::cout << "    Initializing capacitive touch sensor... ";
-    touch.setSensitivity(std::round(puara.getVarNumber("touch_sensitivity")));
-    gestures.setButtonThreshold(touch.getSensitivity());
-    if (touch.initTouch()) {
-        std::cout << "done" << std::endl;
-    } else {
-      std::cout << "capacitive touch sensor initialization failed!" << std::endl;
-    }
+  std::cout << "    Initializing ultrasonic sensor... ";
+  if (initUlt(pin.ultTrig, pin.ultEcho)) {
+      std::cout << "done" << std::endl;
+  } else {
+    std::cout << "capacitive touch sensor initialization failed!" << std::endl;
+  }
 
-    std::cout << "    Initializing ultrasonic sensor... ";
-    if (initUlt(pin.ultTrig, pin.ultEcho)) {
-        std::cout << "done" << std::endl;
-    } else {
-      std::cout << "capacitive touch sensor initialization failed!" << std::endl;
-    }
+  // Initializing IMU
+  std::cout << "    Initializing IMU... ";
+  if (imu.initIMU()) {
+      std::cout << "done" << std::endl;
+  } else {
+      std::cout << "IMU initialization failed!" << std::endl;
+  }
 
-    // Initializing IMU
-    std::cout << "    Initializing IMU... ";
-    if (imu.initIMU()) {
-        std::cout << "done" << std::endl;
-    } else {
-        std::cout << "IMU initialization failed!" << std::endl;
-    }
-
-    std::cout << "    Initializing Liblo server/client... ";
-    osc1 = lo_address_new(puara.getIP1().c_str(), puara.getPORT1Str().c_str());
-    osc2 = lo_address_new(puara.getIP2().c_str(), puara.getPORT2Str().c_str());
-    osc_server = lo_server_thread_new(puara.getLocalPORTStr().c_str(), error);
-    lo_server_thread_add_method(osc_server, NULL, NULL, generic_handler, NULL);
-    lo_server_thread_start(osc_server);
-    std::cout << "done" << std::endl;
-
-    std::cout << "    Initializing Libmapper device/signals... ";
-    lm_dev = mpr_dev_new(puara.get_dmi_name().c_str(), 0);
-    lm.ult = mpr_sig_new(lm_dev, MPR_DIR_OUT, "ult", 1, MPR_FLT, "mm", &lm.ultMin, &lm.ultMax, 0, 0, 0);
-    lm.accel = mpr_sig_new(lm_dev, MPR_DIR_OUT, "accel", 3, MPR_FLT, "m/s^2",  &lm.accelMin, &lm.accelMax, 0, 0, 0);
-    lm.gyro = mpr_sig_new(lm_dev, MPR_DIR_OUT, "gyro", 3, MPR_FLT, "rad/s", &lm.gyroMin, &lm.gyroMax, 0, 0, 0);
-    lm.mag = mpr_sig_new(lm_dev, MPR_DIR_OUT, "mag", 3, MPR_FLT, "uTesla", &lm.magMin, &lm.magMax, 0, 0, 0);
-    lm.quat = mpr_sig_new(lm_dev, MPR_DIR_OUT, "quat", 4, MPR_FLT, "qt", &lm.quatMin, &lm.quatMax, 0, 0, 0);
-    lm.ypr = mpr_sig_new(lm_dev, MPR_DIR_OUT, "ypr", 3, MPR_FLT, "fl", &lm.yprMin, &lm.yprMax, 0, 0, 0);
-    lm.shake = mpr_sig_new(lm_dev, MPR_DIR_OUT, "shake", 3, MPR_FLT, "fl", &lm.shakeMin, &lm.shakeMax, 0, 0, 0);
-    lm.jab = mpr_sig_new(lm_dev, MPR_DIR_OUT, "jab", 3, MPR_FLT, "fl", &lm.jabMin, &lm.jabMax, 0, 0, 0);
-    lm.touch = mpr_sig_new(lm_dev, MPR_DIR_OUT, "touch", 1, MPR_INT32, "un", &lm.touchMin, &lm.touchMax, 0, 0, 0);
-    lm.count = mpr_sig_new(lm_dev, MPR_DIR_OUT, "count", 1, MPR_INT32, "un", &lm.countMin, &lm.countMax, 0, 0, 0);
-    lm.tap = mpr_sig_new(lm_dev, MPR_DIR_OUT, "tap", 1, MPR_INT32, "un", &lm.tapMin, &lm.tapMax, 0, 0, 0);
-    lm.ttap = mpr_sig_new(lm_dev, MPR_DIR_OUT, "triple tap", 1, MPR_INT32, "un", &lm.tapMin, &lm.tapMax, 0, 0, 0);
-    lm.dtap = mpr_sig_new(lm_dev, MPR_DIR_OUT, "double tap", 1, MPR_INT32, "un", &lm.tapMin, &lm.tapMax, 0, 0, 0);
-    lm.bat = mpr_sig_new(lm_dev, MPR_DIR_OUT, "battery", 1, MPR_FLT, "percent", &lm.batMin, &lm.batMax, 0, 0, 0);
-    std::cout << "done" << std::endl;
-    
-    // Using Serial.print and delay to prevent interruptions
-    delay(500);
-    Serial.println(); 
-    Serial.println(puara.get_dmi_name().c_str());
-    Serial.println("Edu Meneses\nMetalab - Société des Arts Technologiques (SAT)\nIDMIL - CIRMMT - McGill University");
-    Serial.print("Firmware version: "); Serial.println(firmware_version); Serial.println("\n");
+  Serial.println(); 
+  Serial.println(puara.get_dmi_name().c_str());
+  Serial.println("Edu Meneses\nSociété des Arts Technologiques (SAT)\nIDMIL - CIRMMT - McGill University");
+  Serial.println(); 
 }
-
-//////////
-// loop //
-//////////
 
 void loop() {
 
-    mpr_dev_poll(lm_dev, 0);
+  // Read Ultrasonic sensor distance
+  readUlt();
+  sensors.ultDistance = getUltDistance();
 
-    // Read Ultrasonic sensor distance
-    readUlt();
+  // Read capacitive button
+  touch.readTouch();
+  sensors.touch = touch.getValue();
+  button.update();
 
-    // Read capacitive button
-    touch.readTouch();
+  // read battery
+  if (millis() - battery.interval > battery.timer) {
+    battery.timer = millis();
+    readBattery();
+    batteryFilter();
+  }
 
-    // read battery
-    if (millis() - battery.interval > battery.timer) {
-      battery.timer = millis();
-      readBattery();
-      batteryFilter();
-    }
+  // read IMU and update puara-gestures
+  if (imu.dataAvailable()) {
+    puaraIMU.accl.x = imu.getAccelX();
+    puaraIMU.accl.y = imu.getAccelY();
+    puaraIMU.accl.z = imu.getAccelZ();
+    puaraIMU.gyro.x = imu.getGyroX();
+    puaraIMU.accl.y = imu.getGyroY();
+    puaraIMU.accl.z = imu.getGyroZ();
+    puaraIMU.magn.x = imu.getMagX();
+    puaraIMU.magn.y = imu.getMagY();
+    puaraIMU.magn.z = imu.getMagZ();
+    puaraQuat.i = imu.getQuatI();
+    puaraQuat.j = imu.getQuatJ();
+    puaraQuat.k = imu.getQuatK();
+    puaraQuat.w = imu.getQuatReal();
+    puaraYPR.x = imu.getYaw();
+    puaraYPR.y = imu.getPitch();
+    puaraYPR.z = imu.getRoll();
+    jab.update();
+    shake.update();
+  }
 
-    // read IMU and update puara-gestures
-    if (imu.dataAvailable()) {
-        gestures.updateJabShake(imu.getGyroX(), imu.getGyroY(), imu.getGyroZ());
-    }
-    gestures.updateButton(touch.getValue());
+  /*
+   * Sending OSC messages.
+   * This sends the sensor value to the defined OSC IP : port.
+   */
+  if (!oscIP.empty() && oscIP != "0.0.0.0") {
 
-    // Preparing arrays for libmapper signals
-        sensors.ultDistance = getUltDistance();
-        sensors.touch = touch.getValue();
-        sensors.accl[0] = imu.getAccelX();
-        sensors.accl[1] = imu.getAccelY();
-        sensors.accl[2] = imu.getAccelZ();
-        sensors.gyro[0] = imu.getGyroX();
-        sensors.gyro[1] = imu.getGyroY();
-        sensors.gyro[2] = imu.getGyroZ();
-        sensors.mag[0] = imu.getMagX();
-        sensors.mag[1] = imu.getMagY();
-        sensors.mag[2] = imu.getMagZ();
-        sensors.quat[0] = imu.getQuatI();
-        sensors.quat[1] = imu.getQuatJ();
-        sensors.quat[2] = imu.getQuatK();
-        sensors.quat[3] = imu.getQuatReal();
-        sensors.ypr[0] = imu.getYaw();
-        sensors.ypr[1] = imu.getPitch();
-        sensors.ypr[2] = imu.getRoll();
-    if (sensors.shake[0] != gestures.getShakeX() || sensors.shake[1] != gestures.getShakeY() || sensors.shake[2] != gestures.getShakeZ()) {
-        sensors.shake[0] = gestures.getShakeX();
-        sensors.shake[1] = gestures.getShakeY();
-        sensors.shake[2] = gestures.getShakeZ();
-        event.shake = true;
-    } else { event.shake = false; }
-    if (sensors.jab[0] != gestures.getJabX() || sensors.jab[1] != gestures.getJabY() || sensors.jab[2] != gestures.getJabZ()) {
-        sensors.jab[0] = gestures.getJabX();
-        sensors.jab[1] = gestures.getJabY();
-        sensors.jab[2] = gestures.getJabZ();
-        event.jab = true;
-    } else { event.jab = false; }
-    if (sensors.count != gestures.getButtonCount()) {sensors.count = gestures.getButtonCount(); event.count = true; } else { event.count = false; }
-    if (sensors.tap != gestures.getButtonTap()) {sensors.tap = gestures.getButtonTap(); event.tap = true; } else { event.tap = false; }
-    if (sensors.dtap != gestures.getButtonDTap()) {sensors.dtap = gestures.getButtonDTap(); event.dtap = true; } else { event.dtap = false; }
-    if (sensors.ttap != gestures.getButtonTTap()) {sensors.ttap = gestures.getButtonTTap(); event.ttap = true; } else { event.ttap = false; }
-    if (sensors.ultTrigger != getUltTrigger()) {sensors.ultTrigger = getUltTrigger(); event.ultTrigger = true; } else { event.ultTrigger = false; }
-    if (sensors.battery != battery.percentage) {sensors.battery = battery.percentage; event.battery = true; } else { event.battery = false; }
+    OSCMessage msg1(("/" + puara.dmi_name()).c_str());
 
-    // updating libmapper signals
-    mpr_sig_set_value(lm.ult, 0, 1, MPR_FLT, &sensors.ultDistance);
-    mpr_sig_set_value(lm.accel, 0, 3, MPR_FLT, &sensors.accl);
-    mpr_sig_set_value(lm.gyro, 0, 3, MPR_FLT, &sensors.gyro);
-    mpr_sig_set_value(lm.mag, 0, 3, MPR_FLT, &sensors.mag);
-    mpr_sig_set_value(lm.quat, 0, 4, MPR_FLT, &sensors.quat);
-    mpr_sig_set_value(lm.ypr, 0, 3, MPR_FLT, &sensors.ypr);
-    mpr_sig_set_value(lm.shake, 0, 3, MPR_FLT, &sensors.shake);
-    mpr_sig_set_value(lm.jab, 0, 3, MPR_FLT, &sensors.jab);
-    mpr_sig_set_value(lm.touch, 0, 1, MPR_INT32, &sensors.touch);
-    mpr_sig_set_value(lm.count, 0, 1, MPR_INT32, &sensors.count);
-    mpr_sig_set_value(lm.tap, 0, 1, MPR_INT32, &sensors.tap);
-    mpr_sig_set_value(lm.ttap, 0, 1, MPR_INT32, &sensors.dtap);
-    mpr_sig_set_value(lm.dtap, 0, 1, MPR_INT32, &sensors.ttap);
-    mpr_sig_set_value(lm.bat, 0, 1, MPR_FLT, &sensors.battery);
+    /* Add messages by appending to msg1 as shown below using msg1.add(). All */
+    /* messages will be sent simultaneously in the same packet. */
 
-    // Sending continuous OSC messages
-    if (puara.IP1_ready()) {
-            oscNamespace.replace(oscNamespace.begin()+baseNamespace.size(),oscNamespace.end(), "ult");
-            lo_send(osc1, oscNamespace.c_str(), "i", sensors.ultDistance);
-            oscNamespace.replace(oscNamespace.begin()+baseNamespace.size(),oscNamespace.end(), "touch");
-            lo_send(osc1, oscNamespace.c_str(), "i", sensors.touch);
-            oscNamespace.replace(oscNamespace.begin()+baseNamespace.size(),oscNamespace.end(), "accl");
-            lo_send(osc1, oscNamespace.c_str(), "fff", sensors.accl[0], sensors.accl[1], sensors.accl[2]);
-            oscNamespace.replace(oscNamespace.begin()+baseNamespace.size(),oscNamespace.end(), "gyro");
-            lo_send(osc1, oscNamespace.c_str(), "fff", sensors.gyro[0], sensors.gyro[1], sensors.gyro[2]);
-            oscNamespace.replace(oscNamespace.begin()+baseNamespace.size(),oscNamespace.end(), "mag");
-            lo_send(osc1, oscNamespace.c_str(), "fff", sensors.mag[0], sensors.mag[1], sensors.mag[2]);
-            oscNamespace.replace(oscNamespace.begin()+baseNamespace.size(),oscNamespace.end(), "quat");
-            lo_send(osc1, oscNamespace.c_str(), "ffff", sensors.quat[0], sensors.quat[1], sensors.quat[2], sensors.quat[3]);
-            oscNamespace.replace(oscNamespace.begin()+baseNamespace.size(),oscNamespace.end(), "ypr");
-            lo_send(osc1, oscNamespace.c_str(), "fff", sensors.ypr[0], sensors.ypr[1], sensors.ypr[2]);
-    }
-    if (puara.IP2_ready()) {
-            oscNamespace.replace(oscNamespace.begin()+baseNamespace.size(),oscNamespace.end(), "ult");
-            lo_send(osc2, oscNamespace.c_str(), "i", sensors.ultDistance);
-            oscNamespace.replace(oscNamespace.begin()+baseNamespace.size(),oscNamespace.end(), "touch");
-            lo_send(osc2, oscNamespace.c_str(), "i", sensors.touch);
-            oscNamespace.replace(oscNamespace.begin()+baseNamespace.size(),oscNamespace.end(), "accl");
-            lo_send(osc2, oscNamespace.c_str(), "fff", sensors.accl[0], sensors.accl[1], sensors.accl[2]);
-            oscNamespace.replace(oscNamespace.begin()+baseNamespace.size(),oscNamespace.end(), "gyro");
-            lo_send(osc2, oscNamespace.c_str(), "fff", sensors.gyro[0], sensors.gyro[1], sensors.gyro[2]);
-            oscNamespace.replace(oscNamespace.begin()+baseNamespace.size(),oscNamespace.end(), "mag");
-            lo_send(osc2, oscNamespace.c_str(), "fff", sensors.mag[0], sensors.mag[1], sensors.mag[2]);
-            oscNamespace.replace(oscNamespace.begin()+baseNamespace.size(),oscNamespace.end(), "quat");
-            lo_send(osc2, oscNamespace.c_str(), "ffff", sensors.quat[0], sensors.quat[1], sensors.quat[2], sensors.quat[3]);
-            oscNamespace.replace(oscNamespace.begin()+baseNamespace.size(),oscNamespace.end(), "ypr");
-            lo_send(osc2, oscNamespace.c_str(), "fff", sensors.ypr[0], sensors.ypr[1], sensors.ypr[2]);
-    }
+    msg1.add(sensor);
+    //  msg1.add(sensor_analog);
+    //  msg1.add(button);
 
-    // Sending discrete OSC messages
-    if (puara.IP1_ready()) {
-        if (event.shake) {
-            oscNamespace.replace(oscNamespace.begin()+baseNamespace.size(),oscNamespace.end(), "shake");
-            lo_send(osc1, oscNamespace.c_str(), "fff", sensors.shake[0], sensors.shake[1], sensors.shake[2]);
-        }
-        if (event.jab) {
-            oscNamespace.replace(oscNamespace.begin()+baseNamespace.size(),oscNamespace.end(), "jab");
-            lo_send(osc1, oscNamespace.c_str(), "fff", sensors.jab[0], sensors.jab[1], sensors.jab[2]);
-        }
-        if (event.count) {
-            oscNamespace.replace(oscNamespace.begin()+baseNamespace.size(),oscNamespace.end(), "count");
-            lo_send(osc1, oscNamespace.c_str(), "i", sensors.count);
-        }
-        if (event.tap) {
-            oscNamespace.replace(oscNamespace.begin()+baseNamespace.size(),oscNamespace.end(), "tap");
-            lo_send(osc1, oscNamespace.c_str(), "i", sensors.tap);
-        }
-        if (event.dtap) {
-            oscNamespace.replace(oscNamespace.begin()+baseNamespace.size(),oscNamespace.end(), "dtap");
-            lo_send(osc1, oscNamespace.c_str(), "i", sensors.dtap);
-        }
-        if (event.ttap) {
-            oscNamespace.replace(oscNamespace.begin()+baseNamespace.size(),oscNamespace.end(), "ttap");
-            lo_send(osc1, oscNamespace.c_str(), "i", sensors.ttap);
-        }
-        if (event.battery) {
-            oscNamespace.replace(oscNamespace.begin()+baseNamespace.size(),oscNamespace.end(), "battery");
-            lo_send(osc1, oscNamespace.c_str(), "i", sensors.battery);
-        }
-    }
-    if (puara.IP2_ready()) {
-        if (event.shake) {
-            oscNamespace.replace(oscNamespace.begin()+baseNamespace.size(),oscNamespace.end(), "shake");
-            lo_send(osc2, oscNamespace.c_str(), "fff", sensors.shake[0], sensors.shake[1], sensors.shake[2]);
-        }
-        if (event.jab) {
-            oscNamespace.replace(oscNamespace.begin()+baseNamespace.size(),oscNamespace.end(), "jab");
-            lo_send(osc2, oscNamespace.c_str(), "fff", sensors.jab[0], sensors.jab[1], sensors.jab[2]);
-        }
-        if (event.count) {
-            oscNamespace.replace(oscNamespace.begin()+baseNamespace.size(),oscNamespace.end(), "count");
-            lo_send(osc2, oscNamespace.c_str(), "i", sensors.count);
-        }
-        if (event.tap) {
-            oscNamespace.replace(oscNamespace.begin()+baseNamespace.size(),oscNamespace.end(), "tap");
-            lo_send(osc2, oscNamespace.c_str(), "i", sensors.tap);
-        }
-        if (event.dtap) {
-            oscNamespace.replace(oscNamespace.begin()+baseNamespace.size(),oscNamespace.end(), "dtap");
-            lo_send(osc2, oscNamespace.c_str(), "i", sensors.dtap);
-        }
-        if (event.ttap) {
-            oscNamespace.replace(oscNamespace.begin()+baseNamespace.size(),oscNamespace.end(), "ttap");
-            lo_send(osc2, oscNamespace.c_str(), "i", sensors.ttap);
-        }
-        if (event.battery) {
-            oscNamespace.replace(oscNamespace.begin()+baseNamespace.size(),oscNamespace.end(), "battery");
-            lo_send(osc2, oscNamespace.c_str(), "i", sensors.battery);
-        }
-    }
+    /* To send a group of OSCMessage together, see OSCBundle in CNMAT's OSC
+     * repo. */
 
-    // Set LED - connection status and battery level
-    #ifdef ARDUINO_LOLIN_D32_PRO
-        if (battery.percentage < 10) {        // low battery - flickering
-        led.setInterval(75);
-        led_var.ledValue = led.blink(255, 50);
-        ledcWrite(0, led_var.ledValue);
+    Udp.beginPacket(oscIP.c_str(), oscPort);
+    msg1.send(Udp);
+    Udp.endPacket();
+    msg1.empty();
+  }
+
+  // Set LED - connection status and battery level
+  #ifdef ARDUINO_LOLIN_D32_PRO
+    if (battery.percentage < 10) {        // low battery - flickering
+    led.setInterval(75);
+    led_var.ledValue = led.blink(255, 50);
+    ledcWrite(0, led_var.ledValue);
+    } else {
+        if (puara.get_StaIsConnected()) { // blinks when connected, cycle when disconnected
+            led.setInterval(1000);
+            led_var.ledValue = led.blink(255, 40);
+            ledcWrite(0, led_var.ledValue);
         } else {
-            if (puara.get_StaIsConnected()) { // blinks when connected, cycle when disconnected
-                led.setInterval(1000);
-                led_var.ledValue = led.blink(255, 40);
-                ledcWrite(0, led_var.ledValue);
-            } else {
-                led.setInterval(4000);
-                led_var.ledValue = led.cycle(led_var.ledValue, 0, 255);
-                ledcWrite(0, led_var.ledValue);
-            }
+            led.setInterval(4000);
+            led_var.ledValue = led.cycle(led_var.ledValue, 0, 255);
+            ledcWrite(0, led_var.ledValue);
         }
-    #elif defined(ARDUINO_TINYPICO)
-        if (battery.percentage < 10) {                // low battery (red)
-            led.setInterval(20);
-            led_var.color = led.blink(255, 20);
-            tinypico.DotStar_SetPixelColor(led_var.color, 0, 0);
+    }
+  #elif defined(ARDUINO_TINYPICO)
+    if (battery.percentage < 10) {                // low battery (red)
+        led.setInterval(20);
+        led_var.color = led.blink(255, 20);
+        tinypico.DotStar_SetPixelColor(led_var.color, 0, 0);
+    } else {
+        if (puara.get_StaIsConnected()) {         // blinks when connected, cycle when disconnected
+            led.setInterval(1000);                // RGB: 0, 128, 255 (Dodger Blue)
+            led_var.color = led.blink(255,20);
+            tinypico.DotStar_SetPixelColor(0, uint8_t(led_var.color/2), led_var.color);
         } else {
-            if (puara.get_StaIsConnected()) {         // blinks when connected, cycle when disconnected
-                led.setInterval(1000);                // RGB: 0, 128, 255 (Dodger Blue)
-                led_var.color = led.blink(255,20);
-                tinypico.DotStar_SetPixelColor(0, uint8_t(led_var.color/2), led_var.color);
-            } else {
-                led.setInterval(4000);
-                led_var.color = led.cycle(led_var.color, 0, 255);
-                tinypico.DotStar_SetPixelColor(0, uint8_t(led_var.color/2), led_var.color);
-            }
+            led.setInterval(4000);
+            led_var.color = led.cycle(led_var.color, 0, 255);
+            tinypico.DotStar_SetPixelColor(0, uint8_t(led_var.color/2), led_var.color);
         }
-    #endif    
+    }
+  #endif    
 
-    // run at 100 Hz
-    //vTaskDelay(10 / portTICK_PERIOD_MS);
+  // run at 100 Hz
+  //vTaskDelay(10 / portTICK_PERIOD_MS);
 }
+
+#ifndef Arduino_h
+extern "C" {
+void app_main(void);
+}
+
+void app_main() {
+  setup();
+  while (1) {
+    loop();
+  }
+}
+#endif

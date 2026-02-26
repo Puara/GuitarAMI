@@ -11,6 +11,10 @@
         {
             "name": "localPORT",
             "value": 8000
+        },
+        {
+            "name": "touch_sensitivity",
+            "value": 950
         }
     ]
 }

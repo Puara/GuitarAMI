@@ -13,6 +13,7 @@
 #include "puara.h"
 #include "puara/gestures.h"
 #include "puara/structs.h"
+#include <OSCBundle.h>
 #include <OSCMessage.h>
 #include <WiFiUdp.h>
 
@@ -180,9 +181,12 @@ void setup() {
 
   puara.start();
   Udp.begin(puara.getVarNumber("localPORT"));
+  std::cout << " getVarNumber " << std::endl;
   puara.set_settings_changed_handler(onSettingsChanged);
   oscIP = puara.getVarText("oscIP");
+  std::cout << " getVarText " << std::endl;
   oscPort = puara.getVarNumber("oscPORT");
+  std::cout << " getVarNumber " << std::endl;
 
   #ifdef ARDUINO_LOLIN_D32_PRO // LED init for WEMOS boards
     ledcSetup(0, 5000, 8);
@@ -244,8 +248,8 @@ void loop() {
     puaraIMU.accl.y = imu.getAccelY();
     puaraIMU.accl.z = imu.getAccelZ();
     puaraIMU.gyro.x = imu.getGyroX();
-    puaraIMU.accl.y = imu.getGyroY();
-    puaraIMU.accl.z = imu.getGyroZ();
+    puaraIMU.gyro.y = imu.getGyroY();
+    puaraIMU.gyro.z = imu.getGyroZ();
     puaraIMU.magn.x = imu.getMagX();
     puaraIMU.magn.y = imu.getMagY();
     puaraIMU.magn.z = imu.getMagZ();
@@ -264,25 +268,51 @@ void loop() {
    * Sending OSC messages.
    * This sends the sensor value to the defined OSC IP : port.
    */
-  if (!oscIP.empty() && oscIP != "0.0.0.0") {
+/*  if (!oscIP.empty() && oscIP != "0.0.0.0") {*/
 
-    OSCMessage msg1(("/" + puara.dmi_name()).c_str());
+    OSCBundle bundle;
+      std::cout << "OSC Bundle created" << std::endl;
+    //add a new OSCMessage to the bundle with the address "/a"
+    // store as a reference to avoid making a copy (copying causes double-free and
+    // corrupts the heap when the temporary is destroyed).
+    OSCMessage &msgA = bundle.add(("/" + puara.dmi_name() + "/IMU").c_str());
+      std::cout << "OSCMessage created" << std::endl;
+    msgA.add(puaraIMU.accl.x)
+        .add(puaraIMU.accl.y)
+        .add(puaraIMU.accl.z);
+      std::cout << "OSCMessage populated" << std::endl;
 
-    /* Add messages by appending to msg1 as shown below using msg1.add(). All */
-    /* messages will be sent simultaneously in the same packet. */
-
-    msg1.add(puaraIMU.accl.x);
+    OSCMessage &msgB = bundle.add(("/" + puara.dmi_name() + "/gyro").c_str());
+    msgB.add(puaraIMU.gyro.x)
+        .add(puaraIMU.gyro.y)
+        .add(puaraIMU.gyro.z);
+    OSCMessage &msgC = bundle.add(("/" + puara.dmi_name() + "/magn").c_str());
+    msgC.add(puaraIMU.magn.x)
+        .add(puaraIMU.magn.y)
+        .add(puaraIMU.magn.z);
+    OSCMessage &msgD = bundle.add(("/" + puara.dmi_name() + "/quat").c_str());
+    msgD.add(puaraQuat.w)
+        .add(puaraQuat.x)
+        .add(puaraQuat.y)
+        .add(puaraQuat.z);
+    OSCMessage &msgE = bundle.add(("/" + puara.dmi_name() + "/YPR").c_str());
+    msgE.add(puaraYPR.x)
+        .add(puaraYPR.y)
+        .add(puaraYPR.z);
+    
     //  msg1.add(sensor_analog);
     //  msg1.add(button);
 
-    /* To send a group of OSCMessage together, see OSCBundle in CNMAT's OSC
-     * repo. */
-
     Udp.beginPacket(oscIP.c_str(), oscPort);
-    msg1.send(Udp);
+      std::cout << "UDP begin packet" << std::endl;
+    bundle.send(Udp);
+      std::cout << "OSC Bundle sent" << std::endl;
     Udp.endPacket();
-    msg1.empty();
-  }
+      std::cout << "UDP end packet" << std::endl;
+    bundle.empty();
+      std::cout << "OSC Bundle emptied" << std::endl;
+
+ // }
 
 // Disabling TinyPico helper functions as it needs update for version 3.x of the ESP32 Arduino Core
 //   // Set LED - connection status and battery level
@@ -321,7 +351,7 @@ void loop() {
 //   #endif    
 
   // run at 100 Hz
-  //vTaskDelay(10 / portTICK_PERIOD_MS);
+  vTaskDelay(10 / portTICK_PERIOD_MS);
 }
 
 #ifndef Arduino_h

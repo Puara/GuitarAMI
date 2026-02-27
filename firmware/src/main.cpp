@@ -10,22 +10,37 @@
  */
 
 #include "Arduino.h"
+#include "esptouch.h"
+#include "led.h"
+#include <OSCBundle.h>
+#include <OSCMessage.h>
+#include "OSCTiming.h"
 #include "puara.h"
 #include "puara/gestures.h"
 #include "puara/structs.h"
-#include <OSCBundle.h>
-#include <OSCMessage.h>
-#include <WiFiUdp.h>
+#include "ult.h"
 
 #include <iostream>
+#include <WiFiUdp.h>
 
-/* (Un)comment the following lines as some GuitarAMi modules
- * (e.g., GuitarAMI module #003) use the BNO080 IMU
- */
+
+// (Un)comment the proper module for your system (LSM9DS1 or BNO080). 
 #define imu_LSM9DS1
 // #define imu_BNO080
 
+#ifdef imu_BNO080
+    #include "bno080.h"
+    Imu_BNO080 imu;
+#endif
+#ifdef imu_LSM9DS1
+    #include "lsm9ds1.h"
+    Imu_LSM9DS1 imu;
+#endif
+
+Led led;
 Puara puara;
+Touch touch;
+WiFiUDP Udp;
 
 struct Sensors {
   int ultDistance;
@@ -41,20 +56,8 @@ puara_gestures::Jab3D jab(&puaraIMU.accl);
 puara_gestures::Shake3D shake(&puaraIMU.accl);
 puara_gestures::Button button(&sensors.touch);
 
-IMU_Orientation orientation;
-
-/*  //this is never used
-struct Event {
-    bool shake = false;
-    bool jab = false;
-    bool count = false;
-    bool tap = false;
-    bool dtap = false;
-    bool ttap = false;
-    bool ultTrigger = false;
-    bool battery;
-} event;
-*/
+std::string oscIP{};
+int oscPort{};
 
 /////////////////////
 // Pin definitions //
@@ -68,6 +71,11 @@ struct Pin {
     int ultEcho; // connects to the echo pin on the distance sensor
 };
 
+struct led_variables {
+    int ledValue = 0;
+    uint8_t color = 0;
+} led_var;
+
 #ifdef ARDUINO_LOLIN_D32_PRO
     Pin pin{ 5, 15, 35, 32, 33 };
 #elif defined(ARDUINO_TINYPICO)
@@ -80,7 +88,7 @@ struct Pin {
 //////////////////////////////////
 // Battery struct and functions //
 //////////////////////////////////
-  
+ /* 
 struct BatteryData {
     unsigned int percentage = 0;
     unsigned int lastPercentage = 0;
@@ -91,80 +99,32 @@ struct BatteryData {
     std::deque<int> filterArray; // store last values
 } battery;
 
-// Disabling TinyPico helper functions as it needs update for version 3.x of the ESP32 Arduino Core
 // // read battery level (based on https://www.youtube.com/watch?v=yZjpYmWVLh8&feature=youtu.be&t=88) 
-// void readBattery() {
-//     #ifdef ARDUINO_LOLIN_D32_PRO
-//         battery.value = analogRead(pin.battery) / 4096.0 * 7.445;
-//     #elif defined(ARDUINO_TINYPICO)
-//         battery.value = tinypico.GetBatteryVoltage();
-//     #endif
-//     battery.percentage = static_cast<int>((battery.value - 2.9) * 100 / (4.15 - 2.9));
-//     if (battery.percentage > 100)
-//         battery.percentage = 100;
-//     if (battery.percentage < 0)
-//         battery.percentage = 0;
-// }
+void readBattery() {
+  #ifdef ARDUINO_LOLIN_D32_PRO
+    battery.value = analogRead(pin.battery) / 4096.0 * 7.445;
+  #elif defined(ARDUINO_TINYPICO)
+    battery.value = tinypico.GetBatteryVoltage();
+  #endif
+  battery.percentage = static_cast<int>((battery.value - 2.9) * 100 / (4.15 - 2.9));
+  if (battery.percentage > 100)
+    battery.percentage = 100;
+  if (battery.percentage < 0)
+    battery.percentage = 0;
+}
 
-// void batteryFilter() {
-//     battery.filterArray.push_back(battery.percentage);
-//     if(battery.filterArray.size() > battery.queueAmount) {
-//         battery.filterArray.pop_front();
-//     }
-//     battery.percentage = 0;
-//     for (int i=0; i<battery.filterArray.size(); i++) {
-//         battery.percentage += battery.filterArray.at(i);
-//     }
-//     battery.percentage /= battery.filterArray.size();
-// }
-
-///////////////
-// OSC / UDP //
-///////////////
-
-WiFiUDP Udp;
-std::string oscIP{};
-int oscPort{};
-
-//////////////////////////////////
-// Include Touch function files //
-//////////////////////////////////
-
-#include "esptouch.h"
-
-Touch touch;
-
-//////////////////////////////////////////////
-// Include ultrasonic sensor function files //
-//////////////////////////////////////////////
-
-#include "ult.h"
-
-////////////////////////////////
-// Include IMU function files //
-////////////////////////////////
-  
-#ifdef imu_BNO080
-    #include "bno080.h"
-    Imu_BNO080 imu;
-#endif
-#ifdef imu_LSM9DS1
-    #include "lsm9ds1.h"
-    Imu_LSM9DS1 imu;
-#endif
-
-////////////////////////////////
-// Include LED function files //
-////////////////////////////////
-
-#include "led.h"
-
-Led led;
-
-struct Led_variables {
-    int ledValue = 0;
-    uint8_t color = 0;
-} led_var;
+void batteryFilter() {
+  battery.filterArray.push_back(battery.percentage);
+  if(battery.filterArray.size() > battery.queueAmount) {
+    battery.filterArray.pop_front();
+  }
+  battery.percentage = 0;
+  for (int i=0; i<battery.filterArray.size(); i++) {
+    battery.percentage += battery.filterArray.at(i);
+  }
+  battery.percentage /= battery.filterArray.size();
+}
+*/
 
 void onSettingsChanged() {
   Udp.begin(puara.getVarNumber("localPORT"));
@@ -203,6 +163,10 @@ void setup() {
     std::cout << "capacitive touch sensor initialization failed!" << std::endl;
   }
 
+  // shorten button hold detection (original default was 5000ms)
+  button.holdInterval = 1000;  // 1 second makes it easier to test
+  // threshold stays 1 because sensors.touch is already binary
+
   std::cout << "    Initializing ultrasonic sensor... ";
   if (initUlt(pin.ultTrig, pin.ultEcho)) {
       std::cout << "done" << std::endl;
@@ -232,16 +196,8 @@ void loop() {
 
   // Read capacitive button
   touch.readTouch();
-  // the value returned by getValue() is the raw filtered touch reading (~0-4096).
-  // the Button helper expects a discrete input (0 or 1), so feed it the
-  // boolean result of the threshold comparison.  sensitivity changes are
-  // reflected in touch.getTouch()/touch.getHold(), so updating the threshold
-  // at runtime (via setSensitivity) will now take effect here as well.
-  sensors.touch = touch.getTouch() ? 1 : 0;
-  std::cout << "Touch value (raw): " << touch.getValue() << std::endl;
+  sensors.touch = touch.getTouch() ? 1 : 0; // convert bool to int for OSC message
   button.update();
-  std::cout << "Button press: " << button.press << ", hold: " << button.hold << ", pressTime: " << button.pressTime << ", tap: " << button.tap << ", doubleTap: " << button.doubleTap << ", tripleTap: " << button.tripleTap << std::endl;
-
 // Disabling TinyPico helper functions as it needs update for version 3.x of the ESP32 Arduino Core
 //   // read battery
 //   if (millis() - battery.interval > battery.timer) {
@@ -280,6 +236,8 @@ void loop() {
   if (!oscIP.empty() && oscIP != "0.0.0.0") {
 
     OSCBundle bundle;
+    osctime_t timetag;
+
     OSCMessage &msgA = bundle.add(("/" + puara.dmi_name() + "/IMU").c_str());
     msgA.add(puaraIMU.accl.x)
         .add(puaraIMU.accl.y)
@@ -303,12 +261,10 @@ void loop() {
         .add(puaraYPR.z);
    
     OSCMessage &msgF = bundle.add( ("/" + puara.dmi_name() + "/ultrasonic").c_str());
-    //msgF.add(sensors.ultTrigger);
-    // cast to a fixed-width type to avoid OSCData constructor ambiguity
     msgF.add(static_cast<int32_t>(sensors.ultDistance));
 
     OSCMessage &msgG = bundle.add(("/" + puara.dmi_name() + "/touch").c_str());
-    msgG.add(static_cast<int32_t>(sensors.touch));
+    msgG.add(touch.getValue());
 
     OSCMessage &msgH = bundle.add(("/" + puara.dmi_name() + "/button").c_str());
     msgH.add(button.press)
@@ -316,14 +272,21 @@ void loop() {
         .add(button.pressTime)
         .add(button.tap)
         .add(button.doubleTap)
-        .add(button.tripleTap);
+        .add(button.tripleTap)
+        .add(button.count);
 
     OSCMessage &msgI = bundle.add(("/" + puara.dmi_name() + "/jab").c_str());
     msgI.add(jab.x.current_value())
         .add(jab.y.current_value())
         .add(jab.z.current_value());
 
+    OSCMessage &msgJ = bundle.add(("/" + puara.dmi_name() + "/shake").c_str());
+    msgJ.add(shake.x.current_value())
+        .add(shake.y.current_value())
+        .add(shake.z.current_value());
+
     Udp.beginPacket(oscIP.c_str(), oscPort);
+    bundle.setTimetag(oscTime());
     bundle.send(Udp);
     Udp.endPacket();
     bundle.empty();

@@ -57,6 +57,13 @@ unsigned int Touch::getSensitivity() {
 
 unsigned int Touch::setSensitivity(int value) {
     Touch::sensitivity = value;
+    // the threshold used by the ESP32 touch peripheral must be updated
+    // after changing our stored sensitivity.  initTouch() configures the
+    // pad initially, but changing the value at runtime requires calling
+    // the driver again.  touch_pad_set_thresh() simply updates the
+    // threshold without tearing down the filter.
+    touch_pad_set_thresh(Touch::pin, Touch::sensitivity);
+
     return 1;
 };
 

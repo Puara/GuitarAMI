@@ -43,6 +43,7 @@ puara_gestures::Button button(&sensors.touch);
 
 IMU_Orientation orientation;
 
+/*  //this is never used
 struct Event {
     bool shake = false;
     bool jab = false;
@@ -53,6 +54,7 @@ struct Event {
     bool ultTrigger = false;
     bool battery;
 } event;
+*/
 
 /////////////////////
 // Pin definitions //
@@ -168,6 +170,8 @@ void onSettingsChanged() {
   Udp.begin(puara.getVarNumber("localPORT"));
   oscIP = puara.getVarText("oscIP");
   oscPort = puara.getVarNumber("oscPORT");
+  touch.setSensitivity(std::round(puara.getVarNumber("touch_sensitivity")));
+  std::cout << "touch_sensitivity updated to " << puara.getVarNumber("touch_sensitivity") << std::endl;
 }
 
 ///////////
@@ -228,8 +232,15 @@ void loop() {
 
   // Read capacitive button
   touch.readTouch();
-  sensors.touch = touch.getValue();
+  // the value returned by getValue() is the raw filtered touch reading (~0-4096).
+  // the Button helper expects a discrete input (0 or 1), so feed it the
+  // boolean result of the threshold comparison.  sensitivity changes are
+  // reflected in touch.getTouch()/touch.getHold(), so updating the threshold
+  // at runtime (via setSensitivity) will now take effect here as well.
+  sensors.touch = touch.getTouch() ? 1 : 0;
+  std::cout << "Touch value (raw): " << touch.getValue() << std::endl;
   button.update();
+  std::cout << "Button press: " << button.press << ", hold: " << button.hold << ", pressTime: " << button.pressTime << ", tap: " << button.tap << ", doubleTap: " << button.doubleTap << ", tripleTap: " << button.tripleTap << std::endl;
 
 // Disabling TinyPico helper functions as it needs update for version 3.x of the ESP32 Arduino Core
 //   // read battery
@@ -261,6 +272,7 @@ void loop() {
     shake.update();
   }
 
+
   /*
    * Sending OSC messages.
    * This sends the sensor value to the defined OSC IP : port.
@@ -290,29 +302,31 @@ void loop() {
         .add(puaraYPR.y)
         .add(puaraYPR.z);
    
-    OSCMessage &msgF = bundle.add(("/" + puara.dmi_name() + "/ultrasonic").c_str());
+    OSCMessage &msgF = bundle.add( ("/" + puara.dmi_name() + "/ultrasonic").c_str());
     //msgF.add(sensors.ultTrigger);
-    msgF.add(sensors.ultDistance);
+    // cast to a fixed-width type to avoid OSCData constructor ambiguity
+    msgF.add(static_cast<int32_t>(sensors.ultDistance));
 
     OSCMessage &msgG = bundle.add(("/" + puara.dmi_name() + "/touch").c_str());
-    msgG.add(sensors.touch);
+    msgG.add(static_cast<int32_t>(sensors.touch));
 
     OSCMessage &msgH = bundle.add(("/" + puara.dmi_name() + "/button").c_str());
     msgH.add(button.press)
         .add(button.hold)
+        .add(button.pressTime)
         .add(button.tap)
         .add(button.doubleTap)
         .add(button.tripleTap);
 
+    OSCMessage &msgI = bundle.add(("/" + puara.dmi_name() + "/jab").c_str());
+    msgI.add(jab.x.current_value())
+        .add(jab.y.current_value())
+        .add(jab.z.current_value());
 
     Udp.beginPacket(oscIP.c_str(), oscPort);
-      std::cout << "UDP begin packet" << std::endl;
     bundle.send(Udp);
-      std::cout << "OSC Bundle sent" << std::endl;
     Udp.endPacket();
-      std::cout << "UDP end packet" << std::endl;
     bundle.empty();
-      std::cout << "OSC Bundle emptied" << std::endl;
 
   }
 

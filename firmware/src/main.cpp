@@ -181,12 +181,9 @@ void setup() {
 
   puara.start();
   Udp.begin(puara.getVarNumber("localPORT"));
-  std::cout << " getVarNumber " << std::endl;
   puara.set_settings_changed_handler(onSettingsChanged);
   oscIP = puara.getVarText("oscIP");
-  std::cout << " getVarText " << std::endl;
   oscPort = puara.getVarNumber("oscPORT");
-  std::cout << " getVarNumber " << std::endl;
 
   #ifdef ARDUINO_LOLIN_D32_PRO // LED init for WEMOS boards
     ledcSetup(0, 5000, 8);
@@ -206,7 +203,7 @@ void setup() {
   if (initUlt(pin.ultTrig, pin.ultEcho)) {
       std::cout << "done" << std::endl;
   } else {
-    std::cout << "capacitive touch sensor initialization failed!" << std::endl;
+    std::cout << "ultrasonic sensor initialization failed!" << std::endl;
   }
 
   // Initializing IMU
@@ -268,20 +265,13 @@ void loop() {
    * Sending OSC messages.
    * This sends the sensor value to the defined OSC IP : port.
    */
-/*  if (!oscIP.empty() && oscIP != "0.0.0.0") {*/
+  if (!oscIP.empty() && oscIP != "0.0.0.0") {
 
     OSCBundle bundle;
-      std::cout << "OSC Bundle created" << std::endl;
-    //add a new OSCMessage to the bundle with the address "/a"
-    // store as a reference to avoid making a copy (copying causes double-free and
-    // corrupts the heap when the temporary is destroyed).
     OSCMessage &msgA = bundle.add(("/" + puara.dmi_name() + "/IMU").c_str());
-      std::cout << "OSCMessage created" << std::endl;
     msgA.add(puaraIMU.accl.x)
         .add(puaraIMU.accl.y)
         .add(puaraIMU.accl.z);
-      std::cout << "OSCMessage populated" << std::endl;
-
     OSCMessage &msgB = bundle.add(("/" + puara.dmi_name() + "/gyro").c_str());
     msgB.add(puaraIMU.gyro.x)
         .add(puaraIMU.gyro.y)
@@ -299,9 +289,21 @@ void loop() {
     msgE.add(puaraYPR.x)
         .add(puaraYPR.y)
         .add(puaraYPR.z);
-    
-    //  msg1.add(sensor_analog);
-    //  msg1.add(button);
+   
+    OSCMessage &msgF = bundle.add(("/" + puara.dmi_name() + "/ultrasonic").c_str());
+    //msgF.add(sensors.ultTrigger);
+    msgF.add(sensors.ultDistance);
+
+    OSCMessage &msgG = bundle.add(("/" + puara.dmi_name() + "/touch").c_str());
+    msgG.add(sensors.touch);
+
+    OSCMessage &msgH = bundle.add(("/" + puara.dmi_name() + "/button").c_str());
+    msgH.add(button.press)
+        .add(button.hold)
+        .add(button.tap)
+        .add(button.doubleTap)
+        .add(button.tripleTap);
+
 
     Udp.beginPacket(oscIP.c_str(), oscPort);
       std::cout << "UDP begin packet" << std::endl;
@@ -312,7 +314,7 @@ void loop() {
     bundle.empty();
       std::cout << "OSC Bundle emptied" << std::endl;
 
- // }
+  }
 
 // Disabling TinyPico helper functions as it needs update for version 3.x of the ESP32 Arduino Core
 //   // Set LED - connection status and battery level

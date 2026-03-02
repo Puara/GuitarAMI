@@ -1,0 +1,20 @@
+{
+    "settings": [
+        {
+            "name": "oscIP",
+            "value": "192.168.4.2"
+        },
+        {
+            "name": "oscPORT",
+            "value": 8000
+        },
+        {
+            "name": "localPORT",
+            "value": 8000
+        },
+        {
+            "name": "touch_sensitivity",
+            "value": 950
+        }
+    ]
+}

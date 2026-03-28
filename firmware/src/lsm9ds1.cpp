@@ -150,9 +150,9 @@ LSM9DS1 myIMU; // initialize library class
         Imu_LSM9DS1::gyroX = myIMU.calcGyro(myIMU.gx) * Imu_LSM9DS1::pi / 180; // in radians per second, converted from DPS
         Imu_LSM9DS1::gyroY = myIMU.calcGyro(myIMU.gy) * Imu_LSM9DS1::pi / 180; // in radians per second, converted from DPS
         Imu_LSM9DS1::gyroZ = myIMU.calcGyro(myIMU.gz) * Imu_LSM9DS1::pi / 180; // in radians per second, converted from DPS
-        Imu_LSM9DS1::magX = myIMU.calcMag(myIMU.mx) / 10000; // in uTesla, converted from Gauss
-        Imu_LSM9DS1::magY = myIMU.calcMag(myIMU.my) / 10000; // in uTesla, converted from Gauss
-        Imu_LSM9DS1::magZ = myIMU.calcMag(myIMU.mz) / 10000; // in uTesla, converted from Gauss
+        Imu_LSM9DS1::magX = myIMU.calcMag(myIMU.mx); // in Gauss
+        Imu_LSM9DS1::magY = myIMU.calcMag(myIMU.my); // in Gauss
+        Imu_LSM9DS1::magZ = myIMU.calcMag(myIMU.mz); // in Gauss
 
         Imu_LSM9DS1::Now = micros();
         Imu_LSM9DS1::deltat = ((Imu_LSM9DS1::Now - Imu_LSM9DS1::lastUpdate)/1000000.0f); // set integration time by time elapsed since last filter update

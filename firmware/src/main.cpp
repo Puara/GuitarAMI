@@ -178,10 +178,10 @@ void loop() {
   button.update();
   // Read battery
   if (millis() - battery.interval > battery.timer) {
-       battery.timer = millis();
-       readBattery();
-       batteryFilter();
-     }
+    battery.timer = millis();
+    readBattery();
+    batteryFilter();
+  }
 
   // read IMU and update puara-gestures
   if (imu.dataAvailable()) {
@@ -214,47 +214,53 @@ void loop() {
     OSCBundle bundle;
     osctime_t timetag;
 
-    bundle.add((osc_prefix + "/IMU").c_str())
-      .add(puaraIMU.accl.x).add(puaraIMU.accl.y).add(puaraIMU.accl.z);
+    bundle.add((osc_prefix + "/IMU/accl/x").c_str()).add(puaraIMU.accl.x);
+    bundle.add((osc_prefix + "/IMU/accl/y").c_str()).add(puaraIMU.accl.y);
+    bundle.add((osc_prefix + "/IMU/accl/z").c_str()).add(puaraIMU.accl.z);
 
-    bundle.add((osc_prefix + "/gyro").c_str())
-      .add(puaraIMU.gyro.x).add(puaraIMU.gyro.y).add(puaraIMU.gyro.z);
+    bundle.add((osc_prefix + "/IMU/gyro/x").c_str()).add(puaraIMU.gyro.x);
+    bundle.add((osc_prefix + "/IMU/gyro/y").c_str()).add(puaraIMU.gyro.y);
+    bundle.add((osc_prefix + "/IMU/gyro/z").c_str()).add(puaraIMU.gyro.z);
 
-    bundle.add((osc_prefix + "/magn").c_str())
-      .add(puaraIMU.magn.x).add(puaraIMU.magn.y).add(puaraIMU.magn.z);
-    
-    bundle.add((osc_prefix + "/quat").c_str())
-      .add(puaraQuat.w).add(puaraQuat.x).add(puaraQuat.y).add(puaraQuat.z);
+    bundle.add((osc_prefix + "/IMU/magn/x").c_str()).add(puaraIMU.magn.x);
+    bundle.add((osc_prefix + "/IMU/magn/y").c_str()).add(puaraIMU.magn.y);
+    bundle.add((osc_prefix + "/IMU/magn/z").c_str()).add(puaraIMU.magn.z);
 
-    bundle.add((osc_prefix + "/YPR").c_str())
-      .add(puaraYPR.x).add(puaraYPR.y).add(puaraYPR.z);
+    bundle.add((osc_prefix + "/IMU/quat/w").c_str()).add(puaraQuat.w);
+    bundle.add((osc_prefix + "/IMU/quat/x").c_str()).add(puaraQuat.x);
+    bundle.add((osc_prefix + "/IMU/quat/y").c_str()).add(puaraQuat.y);
+    bundle.add((osc_prefix + "/IMU/quat/z").c_str()).add(puaraQuat.z);
 
-    bundle.add((osc_prefix + "/ultrasonic").c_str())
-      .add(static_cast<int32_t>(sensors.ultDistance));
+    bundle.add((osc_prefix + "/IMU/YPR/Roll").c_str()).add(puaraYPR.x);
+    bundle.add((osc_prefix + "/IMU/YPR/Pitch").c_str()).add(puaraYPR.y);
+    bundle.add((osc_prefix + "/IMU/YPR/Yaw").c_str()).add(puaraYPR.z);
 
-    bundle.add((osc_prefix + "/touch").c_str())
-      .add(touch.getValue());
-    
-    bundle.add((osc_prefix+"/button/press").c_str()).add(button.press);
-    bundle.add((osc_prefix+"/button/hold").c_str()).add(button.hold);
-    bundle.add((osc_prefix+"/button/pressTime").c_str()).add(button.pressTime);
-    bundle.add((osc_prefix+"/button/tap").c_str()).add(button.tap);
-    bundle.add((osc_prefix+"/button/doubleTap").c_str()).add(button.doubleTap);
-    bundle.add((osc_prefix+"/button/tripleTap").c_str()).add(button.tripleTap);
-    bundle.add((osc_prefix+"/button/count").c_str()).add(button.count);
-    
-    bundle.add(("/" + puara.dmi_name() + "/jab").c_str())
-      .add(jab.x.current_value())
-      .add(jab.y.current_value())
-      .add(jab.z.current_value());
-    
-    bundle.add(("/" + puara.dmi_name() + "/shake").c_str())
-      .add(shake.x.current_value())
-      .add(shake.y.current_value())
-      .add(shake.z.current_value());
-    
-    bundle.add(("/" + puara.dmi_name() + "/battery").c_str())
-      .add(battery.percentage);
+    bundle.add((osc_prefix + "/ultrasonic/distance").c_str())
+        .add(static_cast<int32_t>(sensors.ultDistance));
+
+    bundle.add((osc_prefix + "/touch").c_str()).add(touch.getValue());
+
+    bundle.add((osc_prefix + "/button/press").c_str()).add(button.press);
+    bundle.add((osc_prefix + "/button/hold").c_str()).add(button.hold);
+    bundle.add((osc_prefix + "/button/pressTime").c_str())
+        .add(button.pressTime);
+    bundle.add((osc_prefix + "/button/tap").c_str()).add(button.tap);
+    bundle.add((osc_prefix + "/button/doubleTap").c_str())
+        .add(button.doubleTap);
+    bundle.add((osc_prefix + "/button/tripleTap").c_str())
+        .add(button.tripleTap);
+    bundle.add((osc_prefix + "/button/count").c_str()).add(button.count);
+
+    bundle.add(("/" + puara.dmi_name() + "/jab/x").c_str()).add(jab.x.current_value());
+    bundle.add(("/" + puara.dmi_name() + "/jab/y").c_str()).add(jab.y.current_value());
+  bundle.add(("/" + puara.dmi_name() + "/jab/z").c_str()).add(jab.z.current_value());
+
+    bundle.add(("/" + puara.dmi_name() + "/shake/x").c_str()).add(shake.x.current_value());
+    bundle.add(("/" + puara.dmi_name() + "/shake/y").c_str()).add(shake.y.current_value());
+    bundle.add(("/" + puara.dmi_name() + "/shake/z").c_str()).add(shake.z.current_value());
+
+    bundle.add(("/" + puara.dmi_name() + "/battery/percentage").c_str())
+        .add(battery.percentage);
 
     Udp.beginPacket(oscIP.c_str(), oscPort);
     bundle.setTimetag(oscTime());
@@ -263,44 +269,46 @@ void loop() {
     bundle.empty();
   }
 
-  // Set LED - connection status and battery level
-  #ifdef ARDUINO_LOLIN_D32_PRO
-    if (battery.percentage < 10) {        // low battery - flickering
-      led.setInterval(75);
-      led_var.ledValue = led.blink(255, 50);
-      ledcWrite(0, led_var.ledValue); // why is this at 0 but led pin is defined above...
-    } else {
+// Set LED - connection status and battery level
+#ifdef ARDUINO_LOLIN_D32_PRO
+  if (battery.percentage < 10) { // low battery - flickering
+    led.setInterval(75);
+    led_var.ledValue = led.blink(255, 50);
+    ledcWrite(
+        0,
+        led_var.ledValue); // why is this at 0 but led pin is defined above...
+  } else {
     // blinks when connected, cycle when disconnected
-      if (puara.get_StaIsConnected()) { 
-        led.setInterval(1000);
-        led_var.ledValue = led.blink(255, 40);
-        ledcWrite(0, led_var.ledValue);
-      } else {
-        led.setInterval(4000);
-        led_var.ledValue = led.cycle(led_var.ledValue, 0, 255);
-        ledcWrite(0, led_var.ledValue);
-      }
+    if (puara.get_StaIsConnected()) {
+      led.setInterval(1000);
+      led_var.ledValue = led.blink(255, 40);
+      ledcWrite(0, led_var.ledValue);
+    } else {
+      led.setInterval(4000);
+      led_var.ledValue = led.cycle(led_var.ledValue, 0, 255);
+      ledcWrite(0, led_var.ledValue);
     }
-  #elif defined(ARDUINO_TINYPICO)
-    if (battery.percentage < 10) {                // low battery (red)
-      led.setInterval(20);
+  }
+#elif defined(ARDUINO_TINYPICO)
+  if (battery.percentage < 10) { // low battery (red)
+    led.setInterval(20);
+    led_var.color = led.blink(255, 20);
+    tinypico.DotStar_SetPixelColor(led_var.color, 0, 0);
+  } else {
+    if (puara.get_StaIsConnected()) {
+      led.setInterval(1000); // RGB: 0, 128, 255
+                             // (Dodger Blue)
       led_var.color = led.blink(255, 20);
-      tinypico.DotStar_SetPixelColor(led_var.color, 0, 0);
+      tinypico.DotStar_SetPixelColor(0, uint8_t(led_var.color / 2),
+                                     led_var.color);
     } else {
-      if (puara.get_StaIsConnected()) {         
-        led.setInterval(1000);                // RGB: 0, 128, 255
-       // (Dodger Blue) 
-        led_var.color = led.blink(255,20);
-        tinypico.DotStar_SetPixelColor(0, uint8_t(led_var.color/2),
-               led_var.color);
-    } else {
-        led.setInterval(4000);
-        led_var.color = led.cycle(led_var.color, 0, 255);
-        tinypico.DotStar_SetPixelColor(0, uint8_t(led_var.color/2),
-            led_var.color);
-      }
+      led.setInterval(4000);
+      led_var.color = led.cycle(led_var.color, 0, 255);
+      tinypico.DotStar_SetPixelColor(0, uint8_t(led_var.color / 2),
+                                     led_var.color);
     }
-  #endif
+  }
+#endif
 
   // run at 100 Hz
   vTaskDelay(10 / portTICK_PERIOD_MS);

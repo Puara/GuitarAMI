@@ -16,9 +16,11 @@
 #include "puara.h"
 #include "puara/gestures.h"
 #include "puara/structs.h"
+#include "puara/utils/magnetometerCalibration.h"
 #include "ult.h"
 
 #include <iostream>
+#include <vector>
 
 #define ASSUMED_EMPTY_BATTERY_VOLTAGE 2.9
 #define ASSUMED_FULL_BATTERY_VOLTAGE 4.15
@@ -67,6 +69,13 @@ std::string oscIP{};
 int oscPort{};
 std::string osc_prefix{};
 
+puara_gestures::utils::Calibration magCalibration;
+static bool calibrationMode = false;
+static bool magnetometerCalibrated = false;
+static unsigned long calibrationCollectStartTime = 0;
+static std::vector<puara_gestures::Coord3D> calibrationRawMagData;
+static const unsigned long calibrationCollectDuration = 15000UL;
+
 // Pin definitions
 struct Pin {
   int led;     // Built In LED pin
@@ -103,6 +112,8 @@ struct BatteryData {
 static BatteryData battery;
 void readBattery();
 void batteryFilter();
+void startMagnetometerCalibration();
+void processMagnetometerCalibration();
 
 //////////////////////////////////////////////
 // Updates when settings saved in webserver //
@@ -140,6 +151,7 @@ void setup() {
   std::cout << "    Initializing capacitive touch sensor... ";
   touch.setSensitivity(std::round(puara.getVarNumber("touch_sensitivity")));
   if (touch.initTouch()) {
+    touch.setHoldInterval(10000);
     std::cout << "done" << std::endl;
   } else {
     std::cout << "capacitive touch sensor initialization failed!" << std::endl;
@@ -176,6 +188,11 @@ void loop() {
   sensors.touch =
       touch.getTouch() ? 1 : 0; // convert bool to int for OSC message
   button.update();
+
+  if (touch.getHold() && !calibrationMode) {
+    startMagnetometerCalibration();
+  }
+
   // Read battery
   if (millis() - battery.interval > battery.timer) {
     battery.timer = millis();
@@ -203,6 +220,15 @@ void loop() {
     puaraYPR.z = imu.getRoll();
     jab.update();
     shake.update();
+
+    if (calibrationMode) {
+      processMagnetometerCalibration();
+    }
+
+    if (magnetometerCalibrated) {
+      magCalibration.applyMagnetometerCalibration(puaraIMU);
+      puaraIMU.magn = magCalibration.myCalIMU.magn;
+    }
   }
 
   /*
@@ -350,6 +376,59 @@ void batteryFilter() {
     battery.percentage += battery.filterArray.at(i);
   }
   battery.percentage /= battery.filterArray.size();
+}
+
+void startMagnetometerCalibration() {
+  calibrationMode = true;
+  calibrationCollectStartTime = millis();
+  calibrationRawMagData.clear();
+
+  Serial.println();
+  Serial.println("=== MAGNETOMETER CALIBRATION START ===");
+  Serial.println("Keep the module still for a few seconds, then rotate slowly through all axes.");
+  Serial.print("Collecting samples for ");
+  Serial.print(calibrationCollectDuration / 1000);
+  Serial.println(" seconds...");
+}
+
+void processMagnetometerCalibration() {
+  if (!calibrationMode) {
+    return;
+  }
+
+  calibrationRawMagData.push_back({puaraIMU.magn.x, puaraIMU.magn.y, puaraIMU.magn.z});
+
+  if (millis() - calibrationCollectStartTime < calibrationCollectDuration) {
+    return;
+  }
+
+  int result = magCalibration.generateMagnetometerMatrices(calibrationRawMagData);
+
+  if (result == 1) {
+    magnetometerCalibrated = true;
+    Serial.println("Calibration completed successfully.");
+    Serial.println("Calibrated magnetometer data will now be applied to live readings.");
+    Serial.print("Hard iron bias: ");
+    Serial.print(magCalibration.hardIronBias(0));
+    Serial.print(", ");
+    Serial.print(magCalibration.hardIronBias(1));
+    Serial.print(", ");
+    Serial.println(magCalibration.hardIronBias(2));
+    Serial.println("Soft iron matrix:");
+    for (int i = 0; i < 3; ++i) {
+      Serial.print("  ");
+      Serial.print(magCalibration.softIronMatrix(i, 0));
+      Serial.print(", ");
+      Serial.print(magCalibration.softIronMatrix(i, 1));
+      Serial.print(", ");
+      Serial.println(magCalibration.softIronMatrix(i, 2));
+    }
+    Serial.println("Calibration data ready.");
+  } else {
+    Serial.println("Calibration failed. Retry by holding the touch for 10 seconds and rotating the sensor more evenly.");
+  }
+
+  calibrationMode = false;
 }
 
 #ifndef Arduino_h

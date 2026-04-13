@@ -20,6 +20,7 @@
 #include "ult.h"
 
 #include <iostream>
+#include <array>
 #include <vector>
 
 #define ASSUMED_EMPTY_BATTERY_VOLTAGE 2.9
@@ -72,9 +73,9 @@ std::string osc_prefix{};
 puara_gestures::utils::Calibration magCalibration;
 static bool calibrationMode = false;
 static bool magnetometerCalibrated = false;
-static unsigned long calibrationCollectStartTime = 0;
-static std::vector<puara_gestures::Coord3D> calibrationRawMagData;
-static const unsigned long calibrationCollectDuration = 15000UL;
+static const size_t maxCalibrationSamples = 512;
+static std::array<puara_gestures::Coord3D, maxCalibrationSamples> calibrationRawMagData;
+static size_t calibrationRawMagCount = 0;
 
 // Pin definitions
 struct Pin {
@@ -380,15 +381,12 @@ void batteryFilter() {
 
 void startMagnetometerCalibration() {
   calibrationMode = true;
-  calibrationCollectStartTime = millis();
-  calibrationRawMagData.clear();
+  calibrationRawMagCount = 0;
 
   Serial.println();
   Serial.println("=== MAGNETOMETER CALIBRATION START ===");
   Serial.println("Keep the module still for a few seconds, then rotate slowly through all axes.");
-  Serial.print("Collecting samples for ");
-  Serial.print(calibrationCollectDuration / 1000);
-  Serial.println(" seconds...");
+  Serial.print("Collected 512 samples.");
 }
 
 void processMagnetometerCalibration() {
@@ -396,13 +394,17 @@ void processMagnetometerCalibration() {
     return;
   }
 
-  calibrationRawMagData.push_back({puaraIMU.magn.x, puaraIMU.magn.y, puaraIMU.magn.z});
-
-  if (millis() - calibrationCollectStartTime < calibrationCollectDuration) {
+  if (calibrationRawMagCount < maxCalibrationSamples) {
+    calibrationRawMagData[calibrationRawMagCount++] = {puaraIMU.magn.x, puaraIMU.magn.y, puaraIMU.magn.z};
     return;
   }
+  Serial.println("Reached max calibration samples, processing data...");
+  Serial.println("Transforming array into vector");
 
-  int result = magCalibration.generateMagnetometerMatrices(calibrationRawMagData);
+  std::vector<puara_gestures::Coord3D> sampleVec(calibrationRawMagData.begin(), calibrationRawMagData.begin() + calibrationRawMagCount);
+  Serial.println("generatingMagnetometerMatrices() ...");
+
+  int result = magCalibration.generateMagnetometerMatrices(sampleVec);
 
   if (result == 1) {
     magnetometerCalibrated = true;

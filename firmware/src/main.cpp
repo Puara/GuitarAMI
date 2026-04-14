@@ -16,12 +16,11 @@
 #include "puara.h"
 #include "puara/gestures.h"
 #include "puara/structs.h"
-#include "puara/utils/magnetometerCalibration.h"
+#include "puara/utils/magnetometerCalibration_embedded.h"
 #include "ult.h"
 
 #include <iostream>
 #include <array>
-#include <vector>
 
 #define ASSUMED_EMPTY_BATTERY_VOLTAGE 2.9
 #define ASSUMED_FULL_BATTERY_VOLTAGE 4.15
@@ -73,7 +72,7 @@ std::string osc_prefix{};
 puara_gestures::utils::Calibration magCalibration;
 static bool calibrationMode = false;
 static bool magnetometerCalibrated = false;
-static const size_t maxCalibrationSamples = 512;
+static const size_t maxCalibrationSamples = puara_gestures::utils::Calibration::kMaxEmbeddedSamples;
 static std::array<puara_gestures::Coord3D, maxCalibrationSamples> calibrationRawMagData;
 static size_t calibrationRawMagCount = 0;
 
@@ -399,12 +398,9 @@ void processMagnetometerCalibration() {
     return;
   }
   Serial.println("Reached max calibration samples, processing data...");
-  Serial.println("Transforming array into vector");
+  Serial.println("calling embedded generateMagnetometerMatrices()...");
 
-  std::vector<puara_gestures::Coord3D> sampleVec(calibrationRawMagData.begin(), calibrationRawMagData.begin() + calibrationRawMagCount);
-  Serial.println("generatingMagnetometerMatrices() ...");
-
-  int result = magCalibration.generateMagnetometerMatrices(sampleVec);
+  int result = magCalibration.generateMagnetometerMatrices(calibrationRawMagData.data(), calibrationRawMagCount);
 
   if (result == 1) {
     magnetometerCalibrated = true;

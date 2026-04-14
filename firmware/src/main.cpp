@@ -69,11 +69,11 @@ std::string oscIP{};
 int oscPort{};
 std::string osc_prefix{};
 
-puara_gestures::utils::Calibration magCalibration;
+static const size_t maxSamples = 512;
+puara_gestures::utils::Embedded_Calibration magCalibration(maxSamples);
 static bool calibrationMode = false;
 static bool magnetometerCalibrated = false;
-static const size_t maxCalibrationSamples = puara_gestures::utils::Calibration::kMaxEmbeddedSamples;
-static std::array<puara_gestures::Coord3D, maxCalibrationSamples> calibrationRawMagData;
+static std::array<puara_gestures::Coord3D, maxSamples> calibrationRawMagData;
 static size_t calibrationRawMagCount = 0;
 
 // Pin definitions
@@ -385,7 +385,7 @@ void startMagnetometerCalibration() {
   Serial.println();
   Serial.println("=== MAGNETOMETER CALIBRATION START ===");
   Serial.println("Keep the module still for a few seconds, then rotate slowly through all axes.");
-  Serial.print("Collected 512 samples.");
+  Serial.printf("Collecting %d samples... ", maxSamples);
 }
 
 void processMagnetometerCalibration() {
@@ -393,7 +393,7 @@ void processMagnetometerCalibration() {
     return;
   }
 
-  if (calibrationRawMagCount < maxCalibrationSamples) {
+  if (calibrationRawMagCount < maxSamples) {
     calibrationRawMagData[calibrationRawMagCount++] = {puaraIMU.magn.x, puaraIMU.magn.y, puaraIMU.magn.z};
     return;
   }

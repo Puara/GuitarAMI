@@ -154,14 +154,14 @@ LSM9DS1 myIMU; // initialize library class
         Imu_LSM9DS1::magY = myIMU.calcMag(myIMU.my); // in Gauss
         Imu_LSM9DS1::magZ = myIMU.calcMag(myIMU.mz); // in Gauss
 
-        Imu_LSM9DS1::Now = micros();
-        Imu_LSM9DS1::deltat = ((Imu_LSM9DS1::Now - Imu_LSM9DS1::lastUpdate)/1000000.0f); // set integration time by time elapsed since last filter update
-        Imu_LSM9DS1::lastUpdate = Imu_LSM9DS1::Now;
-        // Sensors x- and y-axes are aligned but magnetometer z-axis (+ down) is opposite to z-axis (+ up) of accelerometer and gyro!
-        // This is ok by aircraft orientation standards!  
-        // Pass gyro rate as rad/s        
-        Imu_LSM9DS1::MadgwickQuaternionUpdate(myIMU.calcAccel(myIMU.ax), myIMU.calcAccel(myIMU.ay), myIMU.calcAccel(myIMU.az), Imu_LSM9DS1::gyroX, Imu_LSM9DS1::gyroY, Imu_LSM9DS1::gyroZ, myIMU.calcMag(myIMU.mx), myIMU.calcMag(myIMU.my), myIMU.calcMag(myIMU.mz));
-        Imu_LSM9DS1::taitBryanAngles(Imu_LSM9DS1::q1, Imu_LSM9DS1::q2, Imu_LSM9DS1::q3, Imu_LSM9DS1::q4);
+        //Imu_LSM9DS1::Now = micros();
+        //Imu_LSM9DS1::deltat = ((Imu_LSM9DS1::Now - Imu_LSM9DS1::lastUpdate)/1000000.0f); // set integration time by time elapsed since last filter update
+        //Imu_LSM9DS1::lastUpdate = Imu_LSM9DS1::Now;
+          // Sensors x- and y-axes are aligned but magnetometer z-axis (+ down) is opposite to z-axis (+ up) of accelerometer and gyro!
+          // This is ok by aircraft orientation standards!  
+          // Pass gyro rate as rad/s        
+        //Imu_LSM9DS1::MadgwickQuaternionUpdate(myIMU.calcAccel(myIMU.ax), myIMU.calcAccel(myIMU.ay), myIMU.calcAccel(myIMU.az), Imu_LSM9DS1::gyroX, Imu_LSM9DS1::gyroY, Imu_LSM9DS1::gyroZ, myIMU.calcMag(myIMU.mx), myIMU.calcMag(myIMU.my), myIMU.calcMag(myIMU.mz));
+        //Imu_LSM9DS1::taitBryanAngles(Imu_LSM9DS1::q1, Imu_LSM9DS1::q2, Imu_LSM9DS1::q3, Imu_LSM9DS1::q4);
         return 1;
     };
 

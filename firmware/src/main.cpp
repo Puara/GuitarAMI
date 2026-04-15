@@ -58,18 +58,22 @@ struct led_variables {
 Sensors sensors;
 led_variables led_var;
 
-puara_gestures::Button button(&sensors.touch);
-puara_gestures::Coord3D puaraYPR;
-puara_gestures::Imu9Axis puaraIMU;
-puara_gestures::Jab3D jab(&puaraIMU.accl);
-puara_gestures::Quaternion puaraQuat;
-puara_gestures::Shake3D shake(&puaraIMU.accl);
-
 std::string oscIP{};
 int oscPort{};
 std::string osc_prefix{};
 
-static const size_t maxSamples = 512;
+puara_gestures::Button button(&sensors.touch);
+puara_gestures::Imu9Axis puaraIMU;
+puara_gestures::Jab3D jab(&puaraIMU.accl);
+puara_gestures::Shake3D shake(&puaraIMU.accl);
+
+//Madgwick structs and filter variables
+puara_gestures::Coord3D puaraYPR;
+puara_gestures::Quaternion puaraQuat;
+puara_gestures::MadgwickQuaternionFilter madgwickFilter(0.1);
+
+// Magnetometer calibration variables
+static const size_t maxSamples = 1024;
 puara_gestures::utils::Embedded_Calibration magCalibration(maxSamples);
 static bool calibrationMode = false;
 static bool magnetometerCalibrated = false;
@@ -211,13 +215,13 @@ void loop() {
     puaraIMU.magn.x = imu.getMagX();
     puaraIMU.magn.y = imu.getMagY();
     puaraIMU.magn.z = imu.getMagZ();
-    puaraQuat.w = imu.getQuatI();
-    puaraQuat.x = imu.getQuatJ();
-    puaraQuat.y = imu.getQuatK();
-    puaraQuat.z = imu.getQuatReal();
-    puaraYPR.x = imu.getYaw();
-    puaraYPR.y = imu.getPitch();
-    puaraYPR.z = imu.getRoll();
+    //puaraQuat.w = imu.getQuatI();
+    //puaraQuat.x = imu.getQuatJ();
+    //puaraQuat.y = imu.getQuatK();
+    //puaraQuat.z = imu.getQuatReal();
+    //puaraYPR.x = imu.getYaw();
+    //puaraYPR.y = imu.getPitch();
+    //puaraYPR.z = imu.getRoll();
     jab.update();
     shake.update();
 
@@ -229,6 +233,11 @@ void loop() {
       magCalibration.applyMagnetometerCalibration(puaraIMU);
       puaraIMU.magn = magCalibration.myCalIMU.magn;
     }
+
+    madgwickFilter.update(puaraIMU);
+    puaraQuat = madgwickFilter.getQuaternion();
+    madgwickFilter.getEulerDegrees(puaraYPR.x, puaraYPR.y, puaraYPR.z);
+
   }
 
   /*

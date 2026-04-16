@@ -70,7 +70,7 @@ puara_gestures::Shake3D shake(&puaraIMU.accl);
 //Madgwick structs and filter variables
 puara_gestures::Coord3D puaraYPR;
 puara_gestures::Quaternion puaraQuat;
-puara_gestures::MadgwickQuaternionFilter madgwickFilter(0.1);
+puara_gestures::MadgwickQuaternionFilter madgwickFilter(1);
 
 // Magnetometer calibration variables
 static const size_t maxSamples = 1024;
@@ -304,14 +304,16 @@ void loop() {
     bundle.empty();
   }
 
-// Set LED - connection status and battery level
+// Set LED - connection status, battery level, and calibration state
 #ifdef ARDUINO_LOLIN_D32_PRO
-  if (battery.percentage < 10) { // low battery - flickering
+  if (calibrationMode) {
+    led.setInterval(200);
+    led_var.ledValue = led.blink(255, 50);
+    ledcWrite(0, led_var.ledValue);
+  } else if (battery.percentage < 10) { // low battery - flickering
     led.setInterval(75);
     led_var.ledValue = led.blink(255, 50);
-    ledcWrite(
-        0,
-        led_var.ledValue); // why is this at 0 but led pin is defined above...
+    ledcWrite(0, led_var.ledValue); // why is this at 0 but led pin is defined above...
   } else {
     // blinks when connected, cycle when disconnected
     if (puara.get_StaIsConnected()) {
@@ -325,7 +327,11 @@ void loop() {
     }
   }
 #elif defined(ARDUINO_TINYPICO)
-  if (battery.percentage < 10) { // low battery (red)
+  if (calibrationMode) {
+    led.setInterval(200);
+    led_var.color = led.blink(255, 50);
+    tinypico.DotStar_SetPixelColor(led_var.color, led_var.color, led_var.color);
+  } else if (battery.percentage < 10) { // low battery (red)
     led.setInterval(20);
     led_var.color = led.blink(255, 20);
     tinypico.DotStar_SetPixelColor(led_var.color, 0, 0);

@@ -62,15 +62,13 @@ std::string oscIP{};
 int oscPort{};
 std::string osc_prefix{};
 
-puara_gestures::Button button(&sensors.touch);
+// IMU data struct
 puara_gestures::Imu9Axis puaraIMU;
+
+// Gesture recognition objects
+puara_gestures::Button button(&sensors.touch);
 puara_gestures::Jab3D jab(&puaraIMU.accl);
 puara_gestures::Shake3D shake(&puaraIMU.accl);
-
-//Madgwick structs and filter variables
-puara_gestures::Coord3D puaraYPR;
-puara_gestures::Quaternion puaraQuat;
-puara_gestures::MadgwickQuaternionFilter madgwickFilter(1);
 
 // Magnetometer calibration variables
 static const size_t maxSamples = 1024;
@@ -79,6 +77,21 @@ static bool calibrationMode = false;
 static bool magnetometerCalibrated = false;
 static std::array<puara_gestures::Coord3D, maxSamples> calibrationRawMagData;
 static size_t calibrationRawMagCount = 0;
+
+// Madgwick filter variables
+puara_gestures::MadgwickQuaternionFilter madgwickFilter(0.8);
+puara_gestures::Coord3D madgwick_YPR;
+puara_gestures::Quaternion madgwick_Quat;
+
+// Mahony filter variables
+puara_gestures::MahonyQuaternionFilter mahonyFilter(1.0, 0.0);
+puara_gestures::Coord3D mahony_YPR;
+puara_gestures::Quaternion mahony_Quat;
+
+// Kalman filter variables
+puara_gestures::KalmanQuaternionFilter kalmanFilter(0.001, 0.01);
+puara_gestures::Coord3D kalman_YPR;
+puara_gestures::Quaternion kalman_Quat;
 
 // Pin definitions
 struct Pin {
@@ -176,7 +189,7 @@ void setup() {
   }
 
   Serial.println();
-  Serial.println("Edu Meneses\nSociété des Arts Technologiques (SAT)\nIDMIL - "
+  Serial.println("Société des Arts Technologiques (SAT)\nIDMIL - "
                  "CIRMMT - McGill University");
   Serial.println();
 }
@@ -189,10 +202,11 @@ void loop() {
 
   // Read capacitive button
   touch.readTouch();
-  sensors.touch =
-      touch.getTouch() ? 1 : 0; // convert bool to int for OSC message
+  // convert bool to int for OSC message
+  sensors.touch =  touch.getTouch() ? 1 : 0; 
   button.update();
 
+  // magnetometer calibration triggered by holding the touch for 10 seconds
   if (touch.getHold() && !calibrationMode) {
     startMagnetometerCalibration();
   }
@@ -215,13 +229,7 @@ void loop() {
     puaraIMU.magn.x = imu.getMagX();
     puaraIMU.magn.y = imu.getMagY();
     puaraIMU.magn.z = imu.getMagZ();
-    //puaraQuat.w = imu.getQuatI();
-    //puaraQuat.x = imu.getQuatJ();
-    //puaraQuat.y = imu.getQuatK();
-    //puaraQuat.z = imu.getQuatReal();
-    //puaraYPR.x = imu.getYaw();
-    //puaraYPR.y = imu.getPitch();
-    //puaraYPR.z = imu.getRoll();
+
     jab.update();
     shake.update();
 
@@ -235,8 +243,17 @@ void loop() {
     }
 
     madgwickFilter.update(puaraIMU);
-    puaraQuat = madgwickFilter.getQuaternion();
-    madgwickFilter.getEulerDegrees(puaraYPR.x, puaraYPR.y, puaraYPR.z);
+    madgwick_Quat = madgwickFilter.getQuaternion();
+    madgwickFilter.getEulerDegrees(madgwick_YPR.x, madgwick_YPR.y, madgwick_YPR.z);
+
+
+    mahonyFilter.update(puaraIMU);
+    mahony_Quat = mahonyFilter.getQuaternion();
+    mahonyFilter.getEulerDegrees(mahony_YPR.x, mahony_YPR.y, mahony_YPR.z);
+
+    kalmanFilter.update(puaraIMU);
+    kalman_Quat = kalmanFilter.getQuaternion();
+    kalmanFilter.getEulerDegrees(kalman_YPR.x, kalman_YPR.y, kalman_YPR.z);
 
   }
 
@@ -260,15 +277,33 @@ void loop() {
     bundle.add((osc_prefix + "/IMU/magn/x").c_str()).add(puaraIMU.magn.x);
     bundle.add((osc_prefix + "/IMU/magn/y").c_str()).add(puaraIMU.magn.y);
     bundle.add((osc_prefix + "/IMU/magn/z").c_str()).add(puaraIMU.magn.z);
-
-    bundle.add((osc_prefix + "/IMU/quat/w").c_str()).add(puaraQuat.w);
-    bundle.add((osc_prefix + "/IMU/quat/x").c_str()).add(puaraQuat.x);
-    bundle.add((osc_prefix + "/IMU/quat/y").c_str()).add(puaraQuat.y);
-    bundle.add((osc_prefix + "/IMU/quat/z").c_str()).add(puaraQuat.z);
-
-    bundle.add((osc_prefix + "/IMU/YPR/Roll").c_str()).add(puaraYPR.x);
-    bundle.add((osc_prefix + "/IMU/YPR/Pitch").c_str()).add(puaraYPR.y);
-    bundle.add((osc_prefix + "/IMU/YPR/Yaw").c_str()).add(puaraYPR.z);
+/*
+    bundle.add((osc_prefix + "/Madgwick/quat/w").c_str()).add(madgwick_Quat.w);
+    bundle.add((osc_prefix + "/Madgwick/quat/x").c_str()).add(madgwick_Quat.x);
+    bundle.add((osc_prefix + "/Madgwick/quat/y").c_str()).add(madgwick_Quat.y);
+    bundle.add((osc_prefix + "/Madgwick/quat/z").c_str()).add(madgwick_Quat.z);
+*/
+    bundle.add((osc_prefix + "/Madgwick/YPR/Roll").c_str()).add(madgwick_YPR.x);
+    bundle.add((osc_prefix + "/Madgwick/YPR/Pitch").c_str()).add(madgwick_YPR.y);
+    bundle.add((osc_prefix + "/Madgwick/YPR/Yaw").c_str()).add(madgwick_YPR.z);
+/*
+    bundle.add((osc_prefix + "/Mahony/quat/w").c_str()).add(mahony_Quat.w);
+    bundle.add((osc_prefix + "/Mahony/quat/x").c_str()).add(mahony_Quat.x);
+    bundle.add((osc_prefix + "/Mahony/quat/y").c_str()).add(mahony_Quat.y);
+    bundle.add((osc_prefix + "/Mahony/quat/z").c_str()).add(mahony_Quat.z);
+*/
+    bundle.add((osc_prefix + "/Mahony/YPR/Roll").c_str()).add(mahony_YPR.x);
+    bundle.add((osc_prefix + "/Mahony/YPR/Pitch").c_str()).add(mahony_YPR.y);
+    bundle.add((osc_prefix + "/Mahony/YPR/Yaw").c_str()).add(mahony_YPR.z);
+/*
+    bundle.add((osc_prefix + "/Kalman/quat/w").c_str()).add(kalman_Quat.w);
+    bundle.add((osc_prefix + "/Kalman/quat/x").c_str()).add(kalman_Quat.x);
+    bundle.add((osc_prefix + "/Kalman/quat/y").c_str()).add(kalman_Quat.y);
+    bundle.add((osc_prefix + "/Kalman/quat/z").c_str()).add(kalman_Quat.z);
+*/
+    bundle.add((osc_prefix + "/Kalman/YPR/Roll").c_str()).add(kalman_YPR.x);
+    bundle.add((osc_prefix + "/Kalman/YPR/Pitch").c_str()).add(kalman_YPR.y);
+    bundle.add((osc_prefix + "/Kalman/YPR/Yaw").c_str()).add(kalman_YPR.z);
 
     bundle.add((osc_prefix + "/ultrasonic/distance").c_str())
         .add(static_cast<int32_t>(sensors.ultDistance));

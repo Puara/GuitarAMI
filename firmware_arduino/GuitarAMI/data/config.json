@@ -1,0 +1,10 @@
+{
+    "device": "GuitarAMI_module",
+    "id": 1,
+    "author": "Edu Meneses",
+    "institution": "SAT/IDMIL (2026)",
+    "APpasswd": "mappings",
+    "wifiSSID": "tstick_network",
+    "wifiPSK": "mappings",
+    "persistentAP": 1
+}

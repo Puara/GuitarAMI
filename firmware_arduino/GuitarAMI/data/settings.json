@@ -1,0 +1,10 @@
+{
+    "settings": [
+        { "name": "oscIP1", "value": "172.24.1.1" },
+        { "name": "oscPORT1", "value": 8000 },
+        { "name": "oscIP2", "value": "192.168.0.100" },
+        { "name": "oscPORT2", "value": 8000 },
+        { "name": "localPORT", "value": 8000 },
+        { "name": "touchThreshold", "value": 950 }
+    ]
+}

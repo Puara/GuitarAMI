@@ -2,3 +2,5 @@
 .gz
 .img.gz
 jacktripbox.img.gz
+.vscode/
+.claude/

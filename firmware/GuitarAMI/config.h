@@ -20,4 +20,5 @@ namespace defaults {
 constexpr unsigned int touchThreshold = 950;
 constexpr int jabThreshold = 10;
 constexpr unsigned int lowBatteryPercent = 10;
+constexpr unsigned long persistentApHoldMs = 10000;
 }

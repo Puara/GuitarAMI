@@ -49,6 +49,8 @@ LED (TinyPICO DotStar):
 - Lime breathing: not connected, use the module's own access point
 - Red flicker: battery below 10 %
 
+Holding the capacitive touch pad for 10 seconds turns the module's own access point back on (POSTs to its own config page to set `persistentAP` and reboot), for when it was switched off to avoid the OSC jitter that concurrent AP+STA mode causes.
+
 ## OSC namespace
 
 Continuous, 100 Hz:

@@ -5,6 +5,7 @@
 #include <Arduino.h>
 #include <ArduinoOTA.h>
 #include <TinyPICO.h>
+#include <WiFiClient.h>
 #include <WiFiUdp.h>
 #include <esp_wifi.h>
 #include <puara.h>
@@ -33,6 +34,7 @@ puara_gestures::Jab3D jab(&imu.reading.gyro);
 unsigned int touchThreshold = defaults::touchThreshold;
 unsigned int touchValue = 0;
 bool stationConnected = false;
+bool previousTouchHold = false;
 unsigned long oscTimer = 0;
 unsigned long linkTimer = 0;
 
@@ -62,6 +64,43 @@ void onOscMessage(MicroOscMessage& message) {
   }
 }
 
+// Posts to the module's own config page (127.0.0.1 is not reliably routable on ESP32, so this
+// targets its own station IP) to flip persistentAP back on and reboot, since puara-module only
+// exposes that setting through the web form, not through puara.h.
+void postToConfigServer(const char* body) {
+  IPAddress host;
+  if (!host.fromString(puara.staIP().c_str())) return;
+
+  WiFiClient client;
+  if (!client.connect(host, 80)) return;
+  client.printf(
+      "POST / HTTP/1.1\r\n"
+      "Host: %s\r\n"
+      "Content-Type: application/x-www-form-urlencoded\r\n"
+      "Content-Length: %u\r\n"
+      "Connection: close\r\n\r\n"
+      "%s",
+      host.toString().c_str(), strlen(body), body);
+
+  unsigned long start = millis();
+  while (client.connected() && millis() - start < 1000) {
+    if (client.available()) {
+      client.read();
+    } else {
+      delay(1);
+    }
+  }
+  client.stop();
+}
+
+// Holding the capacitive touch pad for persistentApHoldMs brings the module's access point back,
+// for when it was turned off after settling on a Wi-Fi network (see the OSC jitter/stutter
+// investigation: concurrent AP+STA contends with the 100 Hz OSC loop).
+void enablePersistentAp() {
+  postToConfigServer("persistentAP=true");
+  postToConfigServer("reboot=true");
+}
+
 void setup() {
   Serial.begin(115200);
 
@@ -79,6 +118,7 @@ void setup() {
   led.begin();
   ultrasonic.begin();
   jab.threshold(defaults::jabThreshold);
+  touch.holdInterval = defaults::persistentApHoldMs;
   Serial.printf("IMU: %s\n", imu.begin() ? "ready" : "not found");
   Serial.printf("%s ready\n", puara.dmi_name().c_str());
 }
@@ -111,6 +151,10 @@ void readSensors() {
   }
   touchValue = touchRead(pins::touch);
   touch.update(touchValue < touchThreshold);
+  if (touch.hold && !previousTouchHold) {
+    enablePersistentAp();
+  }
+  previousTouchHold = touch.hold;
   ultrasonic.update();
   battery.update();
 }
